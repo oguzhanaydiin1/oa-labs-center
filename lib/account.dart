@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import 'shared_session.dart';
 import 'version.dart';
 
 /// OA Labs üyeliği (oalabs.dev ile aynı hesap).
@@ -92,12 +93,15 @@ class OAAccount extends ChangeNotifier {
     return 'OALabsCenter/$appVersion ($os)';
   }
 
-  Map<String, String> _headers({bool json = false}) => {
-        'User-Agent': _userAgent,
-        'Accept': 'application/json',
-        if (json) 'Content-Type': 'application/json',
-        if (_token != null) 'Cookie': '$_cookieName=$_token',
-      };
+  Map<String, String> _headers({bool json = false, String? as}) {
+    final t = as ?? _token;
+    return {
+      'User-Agent': _userAgent,
+      'Accept': 'application/json',
+      if (json) 'Content-Type': 'application/json',
+      if (t != null) 'Cookie': '$_cookieName=$t',
+    };
+  }
 
   Future<void> load() async {
     try {
@@ -105,20 +109,45 @@ class OAAccount extends ChangeNotifier {
     } catch (_) {
       _token = null;
     }
+    if (_token == null) await _adoptShared();
     if (_token != null) await refresh(notify: false);
+    // Windows: başka OA uygulamaları da bu oturumla girebilsin (ortak oturum yoksa yaz).
+    if (user != null && _token != null && SharedSession.supported && await SharedSession.read() == null) {
+      await SharedSession.write(_token!, 'center');
+    }
     loading = false;
     notifyListeners();
   }
 
-  Future<Map<String, dynamic>> _call(String path, [Map<String, dynamic>? body]) async {
+  /// Windows tek giriş: başka bir OA uygulamasında (örn. Pusula) açık oturum varsa onunla
+  /// sunucudan tek kullanımlık kod alıp OA Labs Center'ın kendi oturumunu açar.
+  Future<void> _adoptShared() async {
+    final shared = await SharedSession.read();
+    if (shared == null) return;
+    final h = await _call('/v1/auth/handoff', {'app': 'center'}, shared.token);
+    final code = h['code'];
+    if (h['ok'] != true || code is! String) return;
+    await _call('/v1/auth/redeem', {'code': code});
+  }
+
+  /// Android tek giriş: başka bir OA uygulamasına verilecek tek kullanımlık kod (2 dakika geçerli).
+  Future<String?> handoffFor(String appId) async {
+    if (_token == null) return null;
+    final r = await _call('/v1/auth/handoff', {'app': appId});
+    final code = r['code'];
+    return r['ok'] == true && code is String ? code : null;
+  }
+
+  /// [as]: bu istek için kendi oturumu yerine verilen anahtarı kullan (ortak oturumla kod almak için).
+  Future<Map<String, dynamic>> _call(String path, [Map<String, dynamic>? body, String? as]) async {
     try {
       final uri = Uri.parse('$api$path');
       final res = body == null
-          ? await http.get(uri, headers: _headers()).timeout(const Duration(seconds: 12))
+          ? await http.get(uri, headers: _headers(as: as)).timeout(const Duration(seconds: 12))
           : await http
-              .post(uri, headers: _headers(json: true), body: jsonEncode({'lang': 'tr', ...body}))
+              .post(uri, headers: _headers(json: true, as: as), body: jsonEncode({'lang': 'tr', ...body}))
               .timeout(const Duration(seconds: 12));
-      _readCookie(res.headers['set-cookie']);
+      if (as == null) _readCookie(res.headers['set-cookie']);
       final data = jsonDecode(utf8.decode(res.bodyBytes));
       return data is Map<String, dynamic> ? data : {'ok': false, 'error': 'sunucu'};
     } catch (_) {
@@ -159,6 +188,7 @@ class OAAccount extends ChangeNotifier {
     final r = await _call('/v1/auth/verify', {'email': email.trim(), 'code': code.trim()});
     if (r['ok'] != true) return r['error']?.toString() ?? 'sunucu';
     await refresh();
+    if (_token != null) await SharedSession.write(_token!, 'center');
     return null;
   }
 
@@ -208,7 +238,9 @@ class OAAccount extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    final old = _token;
     if (_token != null) await _call('/v1/auth/logout', {});
+    await SharedSession.clearIf(old);
     _token = null;
     user = null;
     sessions = const [];

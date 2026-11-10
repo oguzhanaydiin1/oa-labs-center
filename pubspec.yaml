@@ -1,7 +1,7 @@
 name: oa_center
 description: OA Labs Center — OA Labs uygulamalarını tek yerden kur, güncelle ve aç.
 publish_to: 'none'
-version: 0.1.1+2
+version: 0.2.0+3
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -16,6 +16,10 @@ dependencies:
   path_provider: ^2.1.5
   url_launcher: ^6.3.0
   open_filex: ^4.5.0
+  ffi: ^2.1.3
+  window_manager: ^0.5.1
+  tray_manager: ^0.5.0
+  local_notifier: ^0.1.6
 
 dev_dependencies:
   flutter_test:
@@ -27,3 +31,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/apps/
+    - assets/icon/tray.ico
