@@ -1,5 +1,9 @@
 # Sürüm notları
 
+## 0.1.1
+
+- Düzeltme: telefonda alt menü ekranın tamamını kaplıyor, sayfalar görünmüyordu
+
 ## 0.1.0
 
 İlk sürüm.
