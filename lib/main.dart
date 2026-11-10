@@ -224,10 +224,10 @@ class _BottomNav extends StatelessWidget {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () => onTap(i),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 56),
-                      alignment: Alignment.center,
-                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    // Sabit yükseklik: hizalamalı bir kutu burada ekranın tamamına yayılır ve sayfayı örter.
+                    child: SizedBox(
+                      height: 56,
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Stack(clipBehavior: Clip.none, children: [
                           Icon(_tabs[i].icon, size: 24, color: tab == i ? OA.amber : OA.muted),
                           if (i == 0 && badge > 0)
