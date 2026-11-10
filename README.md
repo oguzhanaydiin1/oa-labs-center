@@ -39,8 +39,22 @@ Yeni sürüm için `pubspec.yaml`da `version` satırını artır ve `release-not
 **Android imzası:** Depo ayarlarında `ANDROID_KEYSTORE_BASE64` ve `ANDROID_KEYSTORE_PASSWORD` gizli değerleri varsa
 her sürüm aynı OA anahtarıyla imzalanır. Yoksa test anahtarı kullanılır ve Android yeni sürümü eskisinin üzerine kurmaz.
 
+## Tek giriş
+
+Hesap şu an OA Labs Center ile Pusula Browser arasında paylaşılır; her uygulama kendi oturumunu açar.
+Sunucu tarafı: `radyo-app/server/src/auth.js` (`/v1/auth/handoff`, `/v1/auth/redeem`).
+
+- **Windows:** Giriş yapan uygulama oturum anahtarını Windows'un kullanıcıya özel şifrelemesiyle (DPAPI)
+  `%LOCALAPPDATA%\OA Labs\oturum.dat` dosyasına yazar (`lib/shared_session.dart`, Pusula'da birebir aynısı).
+  Girişsiz açılan öbür uygulama bu anahtarla tek kullanımlık kod alır ve kendi oturumunu açar.
+- **Android:** Pusula, Center'ı `dev.oalabs.center.GIRIS` eylemiyle `startActivityForResult` ile açar. Center
+  isteyen uygulamanın paket adını Android'den alır, kullanıcıya sorar, onaylanırsa tek kullanımlık kodu döndürür.
+
+## Windows'ta arka planda çalışma
+
+`lib/desktop.dart`: tepsi simgesi, `HKCU\...\Run` kaydıyla açılışta `--arka-plan` başlatma, 6 saatte bir denetim,
+bildirim, isteğe bağlı kendiliğinden güncelleme (açık uygulamalara dokunmaz), 127.0.0.1:47613 ile tek kopya.
+
 ## Sonraki adımlar
 
-- Tek giriş: öbür OA uygulamalarının girişi OA Labs Center'dan alması
-- Windows açılışında arka planda çalışma ve güncelleme bildirimi
 - Yenilikler akışı ve Destek ekranı

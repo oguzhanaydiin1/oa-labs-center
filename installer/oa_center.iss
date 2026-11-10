@@ -49,6 +49,10 @@ Source: "..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignore
 Name: "{autoprograms}\OA Labs Center"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\OA Labs Center"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
+[Registry]
+; Uygulama "Windows açılışında arka planda çalış" için bu değeri kendisi yazar; kaldırınca silinsin
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "OALabsCenter"; Flags: uninsdeletevalue dontcreatekey
+
 [UninstallRun]
 Filename: "{cmd}"; Parameters: "/c taskkill /im oa_center.exe /f"; Flags: runhidden; RunOnceId: "CenterKapat"
 

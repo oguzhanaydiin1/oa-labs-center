@@ -1,14 +1,21 @@
+import 'dart:io' show Platform, exit;
+
 import 'package:flutter/material.dart';
 
 import 'account.dart';
 import 'account_page.dart';
+import 'catalog.dart';
 import 'center_state.dart';
+import 'desktop.dart';
 import 'discover_page.dart';
 import 'home_page.dart';
+import 'link_request.dart';
 import 'oa_theme.dart';
 
-void main() {
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Windows: zaten açıksa açık olan öne gelir, bu kopya kapanır.
+  if (!await Desktop.i.init(args)) exit(0);
   runApp(const CenterApp());
 }
 
@@ -37,12 +44,33 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
   final _account = OAAccount();
   int _tab = 0;
 
+  /// Android tek giriş: giriş isteyen OA uygulaması (yoksa null).
+  OAApp? _linkApp;
+
+  /// İstek, Center'da önce giriş yapılsın diye geçici olarak gizlendi.
+  bool _linkHidden = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _state.refresh();
-    _account.load();
+    Desktop.i.attach(_state);
+    Desktop.i.onShowTab = _go;
+    _state.refresh().then((_) => Desktop.i.afterCheck());
+    _account.load().then((_) => _checkLink());
+  }
+
+  Future<void> _checkLink() async {
+    if (!Platform.isAndroid) return;
+    final pkg = await LinkRequests.pending();
+    if (pkg == null || !mounted) return;
+    final app = LinkRequests.appFor(pkg, _state.apps);
+    if (app == null) {
+      // OA uygulaması değil: giriş verilmez.
+      await LinkRequests.answer(null);
+      return;
+    }
+    setState(() => _linkApp = app);
   }
 
   @override
@@ -64,7 +92,7 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_state, _account]),
+      listenable: Listenable.merge([_state, _account, Desktop.i]),
       builder: (context, _) => LayoutBuilder(builder: (context, c) {
         final wide = c.maxWidth >= 760;
         final badge = _state.updates.length + (_state.selfUpdate ? 1 : 0);
@@ -73,18 +101,30 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
           DiscoverPage(state: _state, account: _account, wide: wide, onAccount: () => _go(2)),
           AccountPage(account: _account, wide: wide),
         ]);
+        final link = _linkApp;
+        final prompt = link != null && (!_linkHidden || _account.signedIn)
+            ? LinkPrompt(
+                app: link,
+                account: _account,
+                onSignIn: () => setState(() {
+                  _linkHidden = true;
+                  _tab = 2;
+                }),
+              )
+            : null;
+        Widget withPrompt(Widget child) => prompt == null ? child : Stack(children: [child, Positioned.fill(child: prompt)]);
         if (wide) {
-          return Scaffold(
+          return withPrompt(Scaffold(
             body: Row(children: [
               _SideNav(tab: _tab, badge: badge, account: _account, onTap: _go),
               Expanded(child: pages),
             ]),
-          );
+          ));
         }
-        return Scaffold(
+        return withPrompt(Scaffold(
           body: SafeArea(bottom: false, child: pages),
           bottomNavigationBar: _BottomNav(tab: _tab, badge: badge, onTap: _go),
-        );
+        ));
       }),
     );
   }

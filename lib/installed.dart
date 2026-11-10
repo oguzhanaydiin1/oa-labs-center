@@ -132,3 +132,14 @@ Future<List<_RegEntry>> _uninstallEntries({required bool userOnly}) async {
   }
   return list;
 }
+
+/// Windows: [exe] adlı program şu an çalışıyor mu?
+Future<bool> isRunning(String exe) async {
+  if (!Platform.isWindows) return false;
+  try {
+    final r = await Process.run('tasklist', ['/FI', 'IMAGENAME eq $exe', '/NH', '/FO', 'CSV'], stdoutEncoding: latin1);
+    return r.stdout.toString().toLowerCase().contains('"${exe.toLowerCase()}"');
+  } catch (_) {
+    return false;
+  }
+}

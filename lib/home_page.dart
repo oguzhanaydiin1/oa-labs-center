@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'catalog.dart';
 import 'center_state.dart';
+import 'desktop.dart';
 import 'oa_theme.dart';
 import 'widgets.dart';
 
@@ -48,6 +49,7 @@ class HomePage extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: OAButton('Diğer OA uygulamalarına göz at', onPressed: onDiscover),
         ),
+      if (Platform.isWindows) const _WindowsSettings(),
     ]);
   }
 }
@@ -214,4 +216,65 @@ class _InstalledCard extends StatelessWidget {
       ]),
     );
   }
+}
+
+/// Windows ayarları: arka planda çalışma ve kendiliğinden güncelleme.
+class _WindowsSettings extends StatelessWidget {
+  const _WindowsSettings();
+
+  @override
+  Widget build(BuildContext context) {
+    final d = Desktop.i;
+    return OACard(
+      padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
+      child: Column(children: [
+        _SwitchRow(
+          title: 'Windows açılışında arka planda çalış',
+          subtitle: 'Güncellemeleri 6 saatte bir denetler, yenisi çıkınca haber verir. Pencere kapanınca saat yanındaki simgeye iner.',
+          value: d.background,
+          onChanged: d.setBackground,
+        ),
+        const Divider(height: 1, color: OA.line),
+        _SwitchRow(
+          title: 'Güncellemeleri kendiliğinden kur',
+          subtitle: 'Arka planda kurar; o an açık olan uygulamayı kapatmamak için ona dokunmaz, yalnız haber verir.',
+          value: d.autoUpdate,
+          onChanged: d.background ? d.setAutoUpdate : null,
+        ),
+      ]),
+    );
+  }
+}
+
+class _SwitchRow extends StatelessWidget {
+  const _SwitchRow({required this.title, required this.subtitle, required this.value, required this.onChanged});
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) => MergeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title, style: oaBody(17, weight: FontWeight.w600, color: onChanged == null ? OA.faint : OA.text)),
+                const SizedBox(height: 2),
+                Text(subtitle, style: oaBody(13, color: OA.muted)),
+              ]),
+            ),
+            const SizedBox(width: 12),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              activeColor: OA.amberInk,
+              activeTrackColor: OA.amber,
+              inactiveThumbColor: OA.muted,
+              inactiveTrackColor: OA.surface2,
+            ),
+          ]),
+        ),
+      );
 }
