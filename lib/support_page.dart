@@ -77,7 +77,7 @@ class _SupportPageState extends State<SupportPage> {
       _busy = true;
       _error = null;
     });
-    final r = await widget.account.api('/v1/feedback', {
+    final r = await widget.account.request('/v1/feedback', {
       'kind': _kind,
       'app': _app,
       'text': text,

@@ -110,7 +110,7 @@ class DeviceSync {
   /// Bu cihazı ve kurulu uygulamalarını kaydeder; bu cihaza bekleyen istekleri döndürür.
   static Future<List<RemoteCommand>?> sync(OAAccount account, Map<String, String> installed) async {
     if (!account.signedIn) return null;
-    final r = await account.api('/v1/me/devices/sync', {
+    final r = await account.request('/v1/me/devices/sync', {
       'id': await id(),
       'name': await name(),
       'platform': platform,
@@ -122,26 +122,26 @@ class DeviceSync {
 
   static Future<List<OADevice>?> list(OAAccount account) async {
     if (!account.signedIn) return null;
-    final r = await account.api('/v1/me/devices');
+    final r = await account.request('/v1/me/devices');
     if (r['ok'] != true) return null;
     return (r['devices'] as List? ?? const []).map(OADevice.fromJson).whereType<OADevice>().toList();
   }
 
   static Future<bool> send(OAAccount account, String deviceId, String app) async {
-    final r = await account.api('/v1/me/commands', {'device': deviceId, 'app': app, 'from': await id()});
+    final r = await account.request('/v1/me/commands', {'device': deviceId, 'app': app, 'from': await id()});
     return r['ok'] == true;
   }
 
   static Future<void> done(OAAccount account, int commandId, bool ok) async {
-    await account.api('/v1/me/commands/done', {'id': commandId, 'ok': ok});
+    await account.request('/v1/me/commands/done', {'id': commandId, 'ok': ok});
   }
 
   static Future<void> cancel(OAAccount account, int commandId) async {
-    await account.api('/v1/me/commands/cancel', {'id': commandId});
+    await account.request('/v1/me/commands/cancel', {'id': commandId});
   }
 
   static Future<bool> remove(OAAccount account, String deviceId) async {
-    final r = await account.api('/v1/me/devices/remove', {'id': deviceId});
+    final r = await account.request('/v1/me/devices/remove', {'id': deviceId});
     return r['ok'] == true;
   }
 }

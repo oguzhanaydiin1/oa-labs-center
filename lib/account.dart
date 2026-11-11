@@ -140,7 +140,7 @@ class OAAccount extends ChangeNotifier {
   }
 
   /// Oturumla sunucu isteği (cihazlar, uzaktan kurulum). Gövde verilirse POST.
-  Future<Map<String, dynamic>> api(String path, [Map<String, dynamic>? body]) => _call(path, body);
+  Future<Map<String, dynamic>> request(String path, [Map<String, dynamic>? body]) => _call(path, body);
 
   /// [as]: bu istek için kendi oturumu yerine verilen anahtarı kullan (ortak oturumla kod almak için).
   Future<Map<String, dynamic>> _call(String path, [Map<String, dynamic>? body, String? as]) async {
