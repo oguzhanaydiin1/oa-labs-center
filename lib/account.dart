@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show Uint8List;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -15,9 +16,12 @@ import 'version.dart';
 /// `oa_s` oturum çerezini verir. Uygulama bu çerezi cihazın güvenli deposunda saklar ve
 /// isteklerde `Cookie` başlığıyla gönderir.
 class OAUser {
-  const OAUser({required this.name, required this.email, this.notify = const <String>{}});
+  const OAUser({required this.name, required this.email, this.notify = const <String>{}, this.avatar});
   final String name;
   final String email;
+
+  /// Profil fotoğrafının sürüm anahtarı (oalabs.dev'de Hesabım'dan eklenir); yoksa null.
+  final String? avatar;
 
   /// Çıkınca haber verilmesi istenen uygulamaların kimlikleri (örn. "score").
   final Set<String> notify;
@@ -30,6 +34,7 @@ class OAUser {
       name: (j['name'] ?? '').toString(),
       email: (j['email'] ?? '').toString(),
       notify: (j['notify'] as List? ?? const []).map((e) => e.toString()).toSet(),
+      avatar: j['avatar'] is String && (j['avatar'] as String).isNotEmpty ? j['avatar'] as String : null,
     );
   }
 }
@@ -81,6 +86,10 @@ class OAAccount extends ChangeNotifier {
   OAUser? user;
   List<OASession> sessions = const [];
   bool loading = true;
+
+  /// Profil fotoğrafı (yoksa null; baş harf gösterilir).
+  Uint8List? avatar;
+  String? _avatarKey;
 
   bool get signedIn => user != null;
 
@@ -205,11 +214,14 @@ class OAAccount extends ChangeNotifier {
       if (r['ok'] == true) {
         user = OAUser.fromJson(r['user']);
         await _loadSessions();
+        await _loadAvatar();
       } else if (r['error'] == 'giris') {
         // Oturum sunucuda kapanmış (süresi dolmuş ya da başka cihazdan kapatılmış).
         _token = null;
         user = null;
         sessions = const [];
+        avatar = null;
+        _avatarKey = null;
         await _persist();
       }
     }
@@ -220,6 +232,32 @@ class OAAccount extends ChangeNotifier {
     final r = await _call('/v1/me/sessions', body);
     if (r['ok'] == true && r['sessions'] is List) {
       sessions = (r['sessions'] as List).map(OASession.fromJson).whereType<OASession>().toList();
+    }
+  }
+
+  /// Profil fotoğrafını indirir; anahtar değişmediyse yeniden indirmez.
+  Future<void> _loadAvatar() async {
+    final key = _token == null ? null : user?.avatar;
+    if (key == null) {
+      avatar = null;
+      _avatarKey = null;
+      return;
+    }
+    if (key == _avatarKey && avatar != null) return;
+    try {
+      final res = await http
+          .get(Uri.parse('$api/v1/me/avatar?v=${Uri.encodeQueryComponent(key)}'), headers: _headers())
+          .timeout(const Duration(seconds: 15));
+      final type = res.headers['content-type'] ?? '';
+      if (res.statusCode == 200 && type.startsWith('image/') && res.bodyBytes.isNotEmpty) {
+        avatar = res.bodyBytes;
+        _avatarKey = key;
+      } else {
+        avatar = null;
+        _avatarKey = null;
+      }
+    } catch (_) {
+      // Ağ yoksa eldeki fotoğraf kalsın.
     }
   }
 
@@ -248,6 +286,8 @@ class OAAccount extends ChangeNotifier {
     _token = null;
     user = null;
     sessions = const [];
+    avatar = null;
+    _avatarKey = null;
     await _persist();
     notifyListeners();
   }

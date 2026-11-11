@@ -205,4 +205,6 @@ const enStrings = <String, String>{
   'E-posta gönderilemedi, biraz sonra tekrar dene.': 'Couldn\'t send the email. Try again in a bit.',
   'Oturumun kapanmış. Yeniden giriş yap.': 'You\'ve been signed out. Sign in again.',
   'Bir sorun çıktı, biraz sonra tekrar dene.': 'Something went wrong. Try again in a bit.',
+  'Fotoğraf ekle': 'Add photo',
+  'Fotoğrafı değiştir': 'Change photo',
 };

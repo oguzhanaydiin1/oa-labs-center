@@ -262,19 +262,19 @@ class _AccountPageState extends State<AccountPage> {
     return [
       OACard(
         child: Row(children: [
-          Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: OA.surface2, shape: BoxShape.circle, border: Border.all(color: OA.border)),
-            child: Text(u.initial, style: oaDisplay(22)),
-          ),
+          UserAvatar(account, size: 56),
           const SizedBox(width: 16),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
               Text(u.name, style: oaDisplay(20), maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 2),
               Text(u.email, style: oaBody(15, color: OA.text2), maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 6),
+              TextButton(
+                onPressed: () => openLink('https://oalabs.dev/hesabim/'),
+                style: TextButton.styleFrom(foregroundColor: OA.amber, padding: EdgeInsets.zero, minimumSize: const Size(0, 36)),
+                child: Text(account.avatar == null ? t('Fotoğraf ekle') : t('Fotoğrafı değiştir')),
+              ),
             ]),
           ),
         ]),

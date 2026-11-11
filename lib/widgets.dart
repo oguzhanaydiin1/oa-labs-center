@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'account.dart';
 import 'catalog.dart';
 import 'center_state.dart';
 import 'i18n.dart';
@@ -153,6 +154,32 @@ String agoText(DateTime? d) {
   if (x.inDays < 1) return t('{n} saat önce', {'n': x.inHours});
   if (x.inDays < 30) return t('{n} gün önce', {'n': x.inDays});
   return dateText(d);
+}
+
+/// Kullanıcının profil fotoğrafı; yoksa baş harfi, giriş yapılmamışsa kişi simgesi.
+class UserAvatar extends StatelessWidget {
+  const UserAvatar(this.account, {super.key, this.size = 38});
+  final OAAccount account;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = account.user;
+    final img = account.avatar;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(color: OA.surface2, shape: BoxShape.circle, border: Border.all(color: OA.border)),
+      child: user == null
+          ? Icon(Icons.person_outline, size: size * 0.52, color: OA.text2)
+          : img != null
+              ? Image.memory(img, width: size, height: size, fit: BoxFit.cover, gaplessPlayback: true,
+                  errorBuilder: (_, __, ___) => Text(user.initial, style: oaDisplay(size * 0.42)))
+              : Text(user.initial, style: oaDisplay(size * 0.42)),
+    );
+  }
 }
 
 /// Uygulama ikonu: uygulamayla gelen resim, yoksa baş harfli renkli kare.
