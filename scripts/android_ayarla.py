@@ -62,19 +62,33 @@ def native():
     print('Android: MainActivity kopyalandı')
 
 
+PROGUARD = '''
+# WorkManager: yayın derlemesinde küçültme aracı Room veritabanı sınıfını silip yeniden adlandırıyordu;
+# uygulama açılır açılmaz "Failed to create an instance of class androidx.work.impl.WorkDatabase" ile çöküyordu.
+-keep class androidx.work.impl.WorkDatabase_Impl { *; }
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep class * extends androidx.work.ListenableWorker { public <init>(android.content.Context, androidx.work.WorkerParameters); }
+-keep class dev.oalabs.oa_center.** { *; }
+'''
+
+
 def gradle_deps():
-    """Günlük denetim (GuncellemeIsci) için Android WorkManager."""
+    """Günlük denetim (GuncellemeIsci) için Android WorkManager ve küçültme kuralları."""
+    rules = 'android/app/proguard-rules.pro'
+    old = open(rules, encoding='utf-8').read() if os.path.exists(rules) else ''
+    if 'WorkDatabase_Impl' not in old:
+        open(rules, 'w', encoding='utf-8').write(old + PROGUARD)
     kts = 'android/app/build.gradle.kts'
     groovy = 'android/app/build.gradle'
     if os.path.exists(kts):
         s = open(kts, encoding='utf-8').read()
         if 'androidx.work:work-runtime' not in s:
-            s += '\ndependencies {\n    implementation("androidx.work:work-runtime-ktx:2.9.1")\n}\n'
+            s += '\ndependencies {\n    implementation("androidx.work:work-runtime-ktx:2.10.1")\n}\n'
             open(kts, 'w', encoding='utf-8').write(s)
     elif os.path.exists(groovy):
         s = open(groovy, encoding='utf-8').read()
         if 'androidx.work:work-runtime' not in s:
-            s += "\ndependencies {\n    implementation 'androidx.work:work-runtime-ktx:2.9.1'\n}\n"
+            s += "\ndependencies {\n    implementation 'androidx.work:work-runtime-ktx:2.10.1'\n}\n"
             open(groovy, 'w', encoding='utf-8').write(s)
     else:
         sys.exit('android/app/build.gradle(.kts) bulunamadı')
