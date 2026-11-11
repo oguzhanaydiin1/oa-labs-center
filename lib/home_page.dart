@@ -2,16 +2,21 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 
+import 'account.dart';
+import 'announcements.dart';
+import 'app_page.dart';
 import 'catalog.dart';
 import 'center_state.dart';
-import 'desktop.dart';
+import 'devices.dart';
+import 'i18n.dart';
 import 'oa_theme.dart';
 import 'widgets.dart';
 
-/// Ana sayfa: kurulu uygulamalar, bekleyen güncellemeler.
+/// Ana sayfa: duyurular, gelen kurulum istekleri, güncellemeler ve kurulu uygulamalar.
 class HomePage extends StatelessWidget {
-  const HomePage({super.key, required this.state, required this.wide, required this.onDiscover});
+  const HomePage({super.key, required this.state, required this.account, required this.wide, required this.onDiscover});
   final CenterState state;
+  final OAAccount account;
   final bool wide;
   final VoidCallback onDiscover;
 
@@ -20,22 +25,15 @@ class HomePage extends StatelessWidget {
     final list = state.installedApps;
     final ups = state.updates;
     return PageFrame(wide: wide, children: [
-      SizedBox(
-        width: double.infinity,
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            Text('Uygulamaların', style: oaDisplay(34)),
-            OAButton(
-              state.checking ? 'Denetleniyor…' : 'Güncellemeleri denetle',
-              onPressed: state.checking ? null : () => state.refresh(force: true),
-            ),
-          ],
+      PageTitle(
+        t('Uygulamaların'),
+        trailing: OAButton(
+          state.checking ? t('Denetleniyor…') : t('Güncellemeleri denetle'),
+          onPressed: state.checking ? null : () => state.refresh(force: true),
         ),
       ),
+      for (final a in state.visibleAnnouncements) _AnnouncementCard(state: state, item: a),
+      for (final c in state.incoming) _IncomingCard(state: state, command: c),
       if (state.selfUpdate) _SelfBanner(state: state),
       if (ups.isNotEmpty) _UpdateBanner(state: state, count: ups.length),
       if (state.loading)
@@ -43,14 +41,96 @@ class HomePage extends StatelessWidget {
       else if (list.isEmpty)
         _Empty(onDiscover: onDiscover)
       else
-        CardGrid(minWidth: 400, children: [for (final a in list) _InstalledCard(state: state, app: a, wide: wide)]),
+        CardGrid(minWidth: 400, children: [for (final a in list) InstalledCard(state: state, account: account, app: a, wide: wide)]),
       if (!state.loading && list.isNotEmpty && state.available.isNotEmpty)
         Align(
           alignment: Alignment.centerLeft,
-          child: OAButton('Diğer OA uygulamalarına göz at', onPressed: onDiscover),
+          child: OAButton(t('Diğer OA uygulamalarına göz at'), onPressed: onDiscover),
         ),
-      if (Platform.isWindows) const _WindowsSettings(),
     ]);
+  }
+}
+
+class _AnnouncementCard extends StatelessWidget {
+  const _AnnouncementCard({required this.state, required this.item});
+  final CenterState state;
+  final Announcement item;
+
+  @override
+  Widget build(BuildContext context) {
+    final app = item.app == null ? null : state.byId(item.app!);
+    final url = item.url;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+      decoration: BoxDecoration(
+        color: OA.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: OA.amber.withValues(alpha: 0.45)),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (app != null) ...[AppIcon(app, size: 44), const SizedBox(width: 14)],
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(t('Duyuru'), style: oaBody(13, color: OA.amber, weight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(item.title, style: oaDisplay(20)),
+            if (item.body.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(item.body, style: oaBody(15, color: OA.text2)),
+            ],
+            if (url != null) ...[
+              const SizedBox(height: 10),
+              OAButton(t('Ayrıntılar'), onPressed: () => openLink(url)),
+            ],
+          ]),
+        ),
+        IconButton(
+          tooltip: t('Kapat'),
+          icon: const Icon(Icons.close, color: OA.muted),
+          onPressed: () => state.dismissAnnouncement(item),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Android: bilgisayardan gelen "telefona kur" isteği.
+class _IncomingCard extends StatelessWidget {
+  const _IncomingCard({required this.state, required this.command});
+  final CenterState state;
+  final RemoteCommand command;
+
+  @override
+  Widget build(BuildContext context) {
+    final app = state.byId(command.app);
+    if (app == null) return const SizedBox.shrink();
+    return OACard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          AppIcon(app, size: 44),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(t('Başka cihazından istendi'), style: oaBody(13, color: OA.muted, weight: FontWeight.w600)),
+              Text(t('{app} bu telefona kurulsun mu?', {'app': app.name}), style: oaDisplay(18)),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 14),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          OAButton(t('Kur'), kind: OAButtonKind.primary, onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            final err = await state.answerIncoming(command, true);
+            if (err != null) {
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(SnackBar(content: Text(err)));
+            }
+          }),
+          OAButton(t('Şimdi değil'), onPressed: () => state.answerIncoming(command, false)),
+        ]),
+      ]),
+    );
   }
 }
 
@@ -73,19 +153,19 @@ class _UpdateBanner extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 620),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('$count güncelleme var', style: oaDisplay(24)),
+              Text(count == 1 ? t('1 güncelleme var') : t('{n} güncelleme var', {'n': count}), style: oaDisplay(24)),
               const SizedBox(height: 4),
               Text(
                 android
-                    ? '$names. Android her kurulumda senden onay ister; uygulamaları tek tek güncelle.'
-                    : '$names. Arka planda kurulur, yönetici izni gerekmez.',
+                    ? t('{names}. Android her kurulumda senden onay ister; uygulamaları tek tek güncelle.', {'names': names})
+                    : t('{names}. Arka planda kurulur, yönetici izni gerekmez.', {'names': names}),
                 style: oaBody(15, color: OA.text2),
               ),
             ]),
           ),
           if (!android)
             OAButton(
-              state.updatingAll ? 'Güncelleniyor…' : 'Hepsini güncelle',
+              state.updatingAll ? t('Güncelleniyor…') : t('Hepsini güncelle'),
               kind: OAButtonKind.primary,
               big: true,
               onPressed: state.updatingAll || state.jobs.isNotEmpty
@@ -125,11 +205,13 @@ class _SelfBanner extends StatelessWidget {
         children: [
           Text(
             job != null
-                ? 'OA Labs Center güncelleniyor…'
-                : 'OA Labs Center ${rel?.version ?? ''} hazır. Güncellenince kendiliğinden yeniden açılır.',
+                ? t('OA Labs Center güncelleniyor…')
+                : Platform.isAndroid
+                    ? t('OA Labs Center {v} hazır.', {'v': rel?.version ?? ''})
+                    : t('OA Labs Center {v} hazır. Güncellenince kendiliğinden yeniden açılır.', {'v': rel?.version ?? ''}),
             style: oaBody(15, color: OA.text2),
           ),
-          OAButton('Güncelle', onPressed: job != null ? null : () => runInstall(context, state, centerApp)),
+          OAButton(t('Güncelle'), onPressed: job != null ? null : () => runInstall(context, state, centerApp)),
         ],
       ),
     );
@@ -144,18 +226,20 @@ class _Empty extends StatelessWidget {
   Widget build(BuildContext context) => OACard(
         padding: const EdgeInsets.all(28),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Henüz kurulu OA uygulaması yok', style: oaDisplay(24)),
+          Text(t('Henüz kurulu OA uygulaması yok'), style: oaDisplay(24)),
           const SizedBox(height: 6),
-          Text('Keşfet sayfasından istediğini tek dokunuşla kurabilirsin.', style: oaBody(15, color: OA.text2)),
+          Text(t('Keşfet sayfasından istediğini tek dokunuşla kurabilirsin.'), style: oaBody(15, color: OA.text2)),
           const SizedBox(height: 18),
-          OAButton('Keşfet', kind: OAButtonKind.primary, big: true, onPressed: onDiscover),
+          OAButton(t('Keşfet'), kind: OAButtonKind.primary, big: true, onPressed: onDiscover),
         ]),
       );
 }
 
-class _InstalledCard extends StatelessWidget {
-  const _InstalledCard({required this.state, required this.app, required this.wide});
+/// Kurulu uygulama kartı: sürüm, Aç / Güncelle; dokununca uygulama sayfası.
+class InstalledCard extends StatelessWidget {
+  const InstalledCard({super.key, required this.state, required this.account, required this.app, required this.wide});
   final CenterState state;
+  final OAAccount account;
   final OAApp app;
   final bool wide;
 
@@ -172,109 +256,56 @@ class _InstalledCard extends StatelessWidget {
       final p = job.progress;
       status = p != null ? '${job.label} · %${(p * 100).round()}' : '${job.label}…';
     } else if (up && rel != null) {
-      status = '$version kurulu · ${rel.version} hazır';
+      status = t('{a} kurulu · {b} hazır', {'a': version, 'b': rel.version});
     } else if (rel != null) {
-      status = '$version · Güncel';
+      status = t('{v} · Güncel', {'v': version});
     } else {
       status = version;
     }
 
-    return OACard(
-      padding: const EdgeInsets.all(16),
-      child: Row(children: [
-        AppIcon(app),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-            Text(app.name, style: oaDisplay(18), maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 2),
-            Text(status, style: oaBody(13, color: OA.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
-            if (job != null) ...[
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(value: job.progress, minHeight: 4),
-              ),
+    return Material(
+      color: OA.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: OA.border)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => openAppPage(context, state, account, app),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(children: [
+            AppIcon(app),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Text(app.name, style: oaDisplay(18), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(status, style: oaBody(13, color: OA.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+                if (job != null) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(value: job.progress, minHeight: 4),
+                  ),
+                ],
+              ]),
+            ),
+            if (job == null) ...[
+              const SizedBox(width: 10),
+              if (up) OAButton(t('Güncelle'), onPressed: () => runInstall(context, state, app)),
+              if (up && wide) const SizedBox(width: 8),
+              if (!up || wide)
+                OAButton(t('Aç'), onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final ok = await state.open(app);
+                  if (!ok) {
+                    messenger
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(SnackBar(content: Text(t('{app} açılamadı.', {'app': app.name}))));
+                  }
+                }),
             ],
           ]),
         ),
-        if (job == null) ...[
-          const SizedBox(width: 10),
-          if (up) OAButton('Güncelle', onPressed: () => runInstall(context, state, app)),
-          if (up && wide) const SizedBox(width: 8),
-          if (!up || wide)
-            OAButton('Aç', onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final ok = await state.open(app);
-              if (!ok) {
-                messenger
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(SnackBar(content: Text('${app.name} açılamadı.')));
-              }
-            }),
-        ],
-      ]),
+      ),
     );
   }
-}
-
-/// Windows ayarları: arka planda çalışma ve kendiliğinden güncelleme.
-class _WindowsSettings extends StatelessWidget {
-  const _WindowsSettings();
-
-  @override
-  Widget build(BuildContext context) {
-    final d = Desktop.i;
-    return OACard(
-      padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
-      child: Column(children: [
-        _SwitchRow(
-          title: 'Windows açılışında arka planda çalış',
-          subtitle: 'Güncellemeleri 6 saatte bir denetler, yenisi çıkınca haber verir. Pencere kapanınca saat yanındaki simgeye iner.',
-          value: d.background,
-          onChanged: d.setBackground,
-        ),
-        const Divider(height: 1, color: OA.line),
-        _SwitchRow(
-          title: 'Güncellemeleri kendiliğinden kur',
-          subtitle: 'Arka planda kurar; o an açık olan uygulamayı kapatmamak için ona dokunmaz, yalnız haber verir.',
-          value: d.autoUpdate,
-          onChanged: d.background ? d.setAutoUpdate : null,
-        ),
-      ]),
-    );
-  }
-}
-
-class _SwitchRow extends StatelessWidget {
-  const _SwitchRow({required this.title, required this.subtitle, required this.value, required this.onChanged});
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool>? onChanged;
-
-  @override
-  Widget build(BuildContext context) => MergeSemantics(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: oaBody(17, weight: FontWeight.w600, color: onChanged == null ? OA.faint : OA.text)),
-                const SizedBox(height: 2),
-                Text(subtitle, style: oaBody(13, color: OA.muted)),
-              ]),
-            ),
-            const SizedBox(width: 12),
-            Switch(
-              value: value,
-              onChanged: onChanged,
-              activeColor: OA.amberInk,
-              activeTrackColor: OA.amber,
-              inactiveThumbColor: OA.muted,
-              inactiveTrackColor: OA.surface2,
-            ),
-          ]),
-        ),
-      );
 }

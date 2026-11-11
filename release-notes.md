@@ -1,5 +1,18 @@
 # Sürüm notları
 
+## 0.3.0
+
+- Uygulama sayfası: karta dokununca özellikler, ekran görüntüleri, sürüm bilgisi ve geçmişi; Kur, Aç, Güncelle, Kaldır
+- Kaldır: uygulamayı OA Labs Center'dan kaldır (Windows'ta sessizce, Android'de sistemin onayıyla)
+- Yenilikler: bütün OA uygulamalarının sürüm notları tek akışta, uygulamaya göre süzülebilir
+- Cihazlarım: telefonunda ve bilgisayarında kurulu OA uygulamaları yan yana; öbür cihazına uzaktan kurdur (bilgisayar kendisi kurar, telefon onay ister)
+- Destek: geri bildirim formu ve OA Labs'e ulaşma yolları (destek@oalabs.dev, sık sorulanlar, fikir panosu, yol haritası)
+- Duyurular: OA Labs duyuruları ana sayfada ve bildirimde
+- Deneme sürümlerini al: isteyen beta sürümleri de alır
+- İngilizce: arayüz cihazın diline göre açılır; Hesap ve ayarlar'dan değiştirilebilir
+- Android: günde bir kez güncellemeleri ve duyuruları denetleyip bildirim gösterir
+- Uygulama listesi artık oalabs.dev/center/apps.json'dan geliyor
+
 ## 0.2.0
 
 - Tek giriş: OA Labs Center'da giriş yapınca Pusula da girişli açılır (Windows'ta kendiliğinden, telefonda Pusula'daki "OA Labs Center ile giriş yap" ile). Pusula'da girdiysen Center da girişli açılır.

@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'i18n.dart';
 import 'version.dart';
 
 /// Windows'ta bir uygulamanın nasıl bulunup kurulacağı.
@@ -58,6 +60,11 @@ class OAApp {
     required this.tagline,
     required this.state,
     required this.page,
+    this.taglineEn,
+    this.pageEn,
+    this.features = const [],
+    this.featuresEn = const [],
+    this.shots = const [],
     this.repo,
     this.icon,
     this.color = const Color(0xFF1C2030),
@@ -70,12 +77,19 @@ class OAApp {
   final String id;
   final String name;
   final String tagline;
+  final String? taglineEn;
 
   /// "yayinda", "beta" ya da "yakinda".
   final String state;
 
   /// Uygulamanın oalabs.dev'deki sayfası.
   final String page;
+  final String? pageEn;
+  final List<String> features;
+  final List<String> featuresEn;
+
+  /// Ekran görüntüleri (https adresleri).
+  final List<String> shots;
 
   /// GitHub deposu (sürümler buradan okunur), örn. "oguzhanaydiin1/oa-tarayici".
   final String? repo;
@@ -92,6 +106,10 @@ class OAApp {
 
   bool get soon => state == 'yakinda';
   bool get beta => state == 'beta';
+
+  String get localTagline => L.en && (taglineEn ?? '').isNotEmpty ? taglineEn! : tagline;
+  String get localPage => L.en && (pageEn ?? '').isNotEmpty ? pageEn! : page;
+  List<String> get localFeatures => L.en && featuresEn.isNotEmpty ? featuresEn : features;
 
   /// Bu cihazda kurulabilir mi (bu platform için dosyası var mı)?
   bool get onThisPlatform => Platform.isWindows ? win != null : android != null;
@@ -113,6 +131,8 @@ class OAApp {
     return m == null ? fallback : Color(int.parse('FF${m.group(1)}', radix: 16));
   }
 
+  static List<String> _list(Object? v) => (v as List? ?? const []).map((e) => e.toString()).toList();
+
   static OAApp? fromJson(Object? j) {
     if (j is! Map) return null;
     final id = j['id'], name = j['name'];
@@ -121,8 +141,13 @@ class OAApp {
       id: id,
       name: name,
       tagline: (j['tagline'] ?? '').toString(),
+      taglineEn: j['tagline_en'] as String?,
       state: (j['state'] ?? 'yayinda').toString(),
       page: (j['page'] ?? 'https://oalabs.dev/').toString(),
+      pageEn: j['page_en'] as String?,
+      features: _list(j['features']),
+      featuresEn: _list(j['features_en']),
+      shots: _list(j['shots']).where((u) => u.startsWith('https://')).toList(),
       repo: j['repo'] as String?,
       icon: j['icon'] as String?,
       color: _hex(j['color'], const Color(0xFF1C2030)),
@@ -140,6 +165,7 @@ const centerApp = OAApp(
   id: 'center',
   name: 'OA Labs Center',
   tagline: 'OA Labs uygulamalarını tek yerden kur, güncelle ve aç.',
+  taglineEn: 'Install, update and open OA Labs apps in one place.',
   state: 'yayinda',
   page: 'https://oalabs.dev/',
   repo: 'oguzhanaydiin1/oa-labs-center',
@@ -153,96 +179,14 @@ const centerApp = OAApp(
   self: true,
 );
 
-/// Uygulamayla gelen katalog. Sunucudaki liste okunabilirse onun yerine geçer.
-const builtinCatalog = <OAApp>[
-  OAApp(
-    id: 'pusula',
-    name: 'Pusula Browser',
-    tagline: 'Hızlı, sade, reklamsız tarayıcı. Bilgisayarın ve telefonun eşitlenir.',
-    state: 'yayinda',
-    page: 'https://oalabs.dev/tarayici/',
-    repo: 'oguzhanaydiin1/oa-tarayici',
-    icon: 'pusula',
-    win: WinTarget(
-      asset: r'^Pusula-Kurulum\.exe$',
-      key: '{5B0E2B3C-4F1A-4C7E-9A0F-0A1B2C3D4E5F}_is1',
-      exe: 'oa_tarayici.exe',
-      silent: _inno,
-    ),
-    android: AndroidTarget(asset: r'^Pusula-Android\.apk$', package: 'dev.oalabs.oa_tarayici'),
-  ),
-  OAApp(
-    id: 'kopru',
-    name: 'Pusula Köprü',
-    tagline: 'Bilgisayarın ile telefonun arasında dosya, fotoğraf, bağlantı ve pano.',
-    state: 'yayinda',
-    page: 'https://oalabs.dev/kopru/',
-    repo: 'oguzhanaydiin1/pusula-kopru',
-    icon: 'kopru',
-    win: WinTarget(
-      asset: r'^Pusula-Kopru-Kurulum\.exe$',
-      key: '{8C1F4E2A-6B3D-4A57-9E21-3F5D7C9A0B14}_is1',
-      exe: 'pusula_kopru.exe',
-      silent: _inno,
-    ),
-    android: AndroidTarget(asset: r'^Pusula-Kopru-Android\.apk$', package: 'dev.oalabs.pusula_kopru'),
-  ),
-  OAApp(
-    id: 'radyo',
-    name: 'OA Radyo',
-    tagline: 'Türkiye’nin ve dünyanın radyoları tek uygulamada.',
-    state: 'yayinda',
-    page: 'https://oalabs.dev/radyo/',
-    repo: 'oguzhanaydiin1/radyo-app',
-    icon: 'radyo',
-    color: Color(0xFFF2A541),
-    ink: Color(0xFF14110A),
-    win: WinTarget(asset: r'^Radyo-Setup\.exe$', displayName: 'OA Radyo', exe: 'Radyo.exe', silent: ['/S']),
-  ),
-  OAApp(
-    id: 'harrier',
-    name: 'Harrier Cleaner',
-    tagline: 'Bilgisayarını derli toplu ve hızlı tutar.',
-    state: 'beta',
-    page: 'https://oalabs.dev/harrier/',
-    repo: 'oguzhanaydiin1/cihaz_bakim',
-    icon: 'harrier',
-    color: Color(0xFF1E3A8A),
-    win: WinTarget(
-      asset: r'^HarrierCleaner-Setup-.*\.exe$',
-      key: '{8C3B2C1E-6F1A-4C55-9E2E-6B8E0A4D1F21}_is1',
-      exe: 'harrier_cleaner.exe',
-      silent: _inno,
-    ),
-  ),
-  OAApp(
-    id: 'score',
-    name: 'OA Score',
-    tagline: 'Canlı skorlar ve maç haberleri.',
-    state: 'yakinda',
-    page: 'https://oalabs.dev/#uygulamalar',
-    color: Color(0xFF5BC48C),
-    ink: Color(0xFF0F2A1C),
-  ),
-  OAApp(
-    id: 'barkod',
-    name: 'OA Barkod',
-    tagline: 'Hazırlanıyor.',
-    state: 'yakinda',
-    page: 'https://oalabs.dev/#uygulamalar',
-    color: Color(0xFF6EA8FE),
-    ink: Color(0xFF0E1A30),
-  ),
-];
-
-/// Katalog: oalabs.dev/center/apps.json okunabilirse o, yoksa son okunan, o da yoksa uygulamayla gelen.
-/// Böylece yeni bir uygulama eklemek için OA Labs Center'ı güncellemek gerekmez.
+/// Katalog: oalabs.dev/center/apps.json okunabilirse o, yoksa son okunan, o da yoksa uygulamayla gelen
+/// (assets/catalog.json, sitedekinin kopyası). Yeni bir uygulama eklemek için Center'ı güncellemek gerekmez.
 class Catalog {
   Catalog._();
   static const _url = 'https://oalabs.dev/center/apps.json';
   static const _prefKey = 'katalog';
 
-  static List<OAApp>? _parse(String body) {
+  static List<OAApp>? parse(String body) {
     try {
       final j = jsonDecode(body);
       final list = j is Map ? j['apps'] : j;
@@ -254,14 +198,28 @@ class Catalog {
     }
   }
 
+  static List<OAApp> _bundled = const [];
+
+  /// Uygulamayla gelen liste (her zaman vardır).
+  static List<OAApp> get bundled => _bundled;
+
+  static Future<void> loadBundled() async {
+    try {
+      _bundled = parse(await rootBundle.loadString('assets/catalog.json')) ?? const [];
+    } catch (_) {
+      _bundled = const [];
+    }
+  }
+
   /// Önce elde olanı (son okunan ya da uygulamayla gelen) verir.
   static Future<List<OAApp>> cached() async {
+    if (_bundled.isEmpty) await loadBundled();
     try {
       final p = await SharedPreferences.getInstance();
       final s = p.getString(_prefKey);
-      if (s != null) return _parse(s) ?? builtinCatalog;
+      if (s != null) return parse(s) ?? _bundled;
     } catch (_) {}
-    return builtinCatalog;
+    return _bundled;
   }
 
   /// Sunucudaki listeyi dener; okunamazsa null.
@@ -272,7 +230,7 @@ class Catalog {
           .timeout(const Duration(seconds: 8));
       if (r.statusCode != 200) return null;
       final body = utf8.decode(r.bodyBytes);
-      final apps = _parse(body);
+      final apps = parse(body);
       if (apps == null) return null;
       final p = await SharedPreferences.getInstance();
       await p.setString(_prefKey, body);

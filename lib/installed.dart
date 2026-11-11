@@ -8,11 +8,17 @@ import 'version.dart';
 
 /// Cihazda kurulu bir uygulama.
 class Installed {
-  const Installed(this.version, {this.exe});
+  const Installed(this.version, {this.exe, this.uninstall, this.quietUninstall = false});
   final String version;
 
   /// Windows: çalıştırılacak dosyanın yolu (bulunabildiyse).
   final String? exe;
+
+  /// Windows: kayıttaki kaldırma komutu.
+  final String? uninstall;
+
+  /// [uninstall] zaten sessiz çalışan komut mu (QuietUninstallString)?
+  final bool quietUninstall;
 }
 
 const _channel = MethodChannel('oa/center');
@@ -32,7 +38,13 @@ Future<Map<String, Installed>> readInstalled(List<OAApp> apps, {bool userOnly = 
         if (!e.matches(t)) continue;
         final v = e.values['displayversion'];
         if (v == null || v.isEmpty) continue;
-        out[app.id] = Installed(v, exe: e.exePath(t));
+        final quiet = e.values['quietuninstallstring'];
+        out[app.id] = Installed(
+          v,
+          exe: e.exePath(t),
+          uninstall: (quiet != null && quiet.isNotEmpty) ? quiet : e.values['uninstallstring'],
+          quietUninstall: quiet != null && quiet.isNotEmpty,
+        );
         break;
       }
     }
@@ -48,7 +60,7 @@ Future<Map<String, Installed>> readInstalled(List<OAApp> apps, {bool userOnly = 
   }
   // OA Labs Center'ın kendisi: çalışan sürüm.
   for (final app in apps) {
-    if (app.self) out[app.id] = Installed(appVersion, exe: out[app.id]?.exe);
+    if (app.self) out[app.id] = Installed(appVersion, exe: out[app.id]?.exe, uninstall: out[app.id]?.uninstall);
   }
   return out;
 }
@@ -67,6 +79,51 @@ Future<bool> launchApp(OAApp app, Installed info) async {
     }
   } catch (_) {}
   return false;
+}
+
+/// Uygulamayı kaldırır. Windows'ta kaldırma programını sessiz çalıştırıp bitmesini bekler;
+/// Android'de sistemin kaldırma onayını açar (sonuç, uygulamaya dönülünce okunur).
+Future<bool> uninstallApp(OAApp app, Installed info) async {
+  try {
+    if (Platform.isAndroid && app.android != null) {
+      return await _channel.invokeMethod<bool>('kaldir', {'paket': app.android!.package}) ?? false;
+    }
+    if (!Platform.isWindows) return false;
+    final cmd = info.uninstall;
+    if (cmd == null || cmd.trim().isEmpty) return false;
+    final parts = _splitCommand(cmd);
+    if (parts.isEmpty) return false;
+    final exe = parts.first;
+    final args = parts.sublist(1);
+    final lower = exe.toLowerCase();
+    if (!info.quietUninstall) {
+      if (RegExp(r'unins\d*\.exe$').hasMatch(lower)) {
+        args.addAll(['/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART']);
+      } else if (!args.any((a) => a.toUpperCase() == '/S')) {
+        args.add('/S'); // NSIS (Electron) kaldırıcıları
+      }
+    }
+    if (lower.endsWith('msiexec.exe') || lower == 'msiexec') return false; // OA uygulamalarında yok
+    final r = await Process.run(exe, args).timeout(const Duration(minutes: 4));
+    return r.exitCode == 0;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// `"C:\Yol\unins000.exe" /SILENT` → [C:\Yol\unins000.exe, /SILENT]
+List<String> _splitCommand(String cmd) {
+  final out = <String>[];
+  final m = RegExp(r'"([^"]+)"|(\S+)').allMatches(cmd.trim());
+  for (final x in m) {
+    out.add(x.group(1) ?? x.group(2)!);
+  }
+  // Tırnaksız ve boşluklu exe yolu: ".exe" ile biten ilk parçaya kadar birleştir.
+  if (out.isNotEmpty && !cmd.trim().startsWith('"') && !out.first.toLowerCase().endsWith('.exe')) {
+    final i = out.indexWhere((p) => p.toLowerCase().endsWith('.exe'));
+    if (i > 0) return [out.sublist(0, i + 1).join(' '), ...out.sublist(i + 1)];
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- Windows kayıt defteri

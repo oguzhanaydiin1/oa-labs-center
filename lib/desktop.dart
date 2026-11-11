@@ -7,8 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'announcements.dart';
 import 'catalog.dart';
 import 'center_state.dart';
+import 'i18n.dart';
 import 'installed.dart';
 
 /// Windows: arka planda çalışma.
@@ -17,6 +19,8 @@ import 'installed.dart';
 /// - Windows açılınca "--arka-plan" ile pencere göstermeden başlar.
 /// - 6 saatte bir güncellemeleri denetler; yenisi çıkınca bildirim gösterir.
 /// - "Güncellemeleri kendiliğinden kur" açıksa, o an açık olmayan uygulamaları kendisi günceller.
+/// - 15 dakikada bir hesabın öbür cihazlarından gelen kurulum isteklerine bakar ve kurar.
+/// - Yeni OA Labs duyurularını bildirir.
 /// - Tek kopya: zaten açıkken yeniden başlatılırsa açık olan öne gelir.
 class Desktop extends ChangeNotifier with WindowListener, TrayListener {
   Desktop._();
@@ -26,12 +30,14 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
   static const _runKey = r'HKCU\Software\Microsoft\Windows\CurrentVersion\Run';
   static const _runName = 'OALabsCenter';
   static const _interval = Duration(hours: 6);
+  static const _remoteInterval = Duration(minutes: 15);
 
   bool background = true;
   bool autoUpdate = false;
   CenterState? _state;
   SharedPreferences? _prefs;
   Timer? _timer;
+  Timer? _remoteTimer;
   ServerSocket? _server;
   bool _notifyReady = false;
 
@@ -74,10 +80,10 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
       await trayManager.setIcon('assets/icon/tray.ico');
       await trayManager.setToolTip('OA Labs Center');
       await trayManager.setContextMenu(Menu(items: [
-        MenuItem(key: 'show', label: 'OA Labs Center’ı aç'),
-        MenuItem(key: 'check', label: 'Güncellemeleri denetle'),
+        MenuItem(key: 'show', label: t('OA Labs Center’ı aç')),
+        MenuItem(key: 'check', label: t('Güncellemeleri denetle')),
         MenuItem.separator(),
-        MenuItem(key: 'exit', label: 'Çıkış'),
+        MenuItem(key: 'exit', label: t('Çıkış')),
       ]));
       trayManager.addListener(this);
     } catch (_) {}
@@ -100,6 +106,18 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
     _state = state;
     _timer?.cancel();
     _timer = Timer.periodic(_interval, (_) => check());
+    _remoteTimer?.cancel();
+    _remoteTimer = Timer.periodic(_remoteInterval, (_) => remote());
+  }
+
+  /// Öbür cihazdan gelen kurulum isteklerini alır ve kurar (CenterState.syncDevice).
+  Future<void> remote() async {
+    final s = _state;
+    if (s == null) return;
+    final done = await s.syncDevice();
+    if (done.isNotEmpty) {
+      await _notify(t('Öbür cihazından istenen kuruldu'), done.join(', '), always: true);
+    }
   }
 
   /// Güncellemeleri denetler; yenileri bildirir ya da (ayar açıksa) kurar.
@@ -110,10 +128,15 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
     await afterCheck();
   }
 
-  /// Denetimden sonra: daha önce bildirilmemiş güncellemeleri bildir ya da kur.
+  /// Denetimden sonra: yeni duyuruları ve daha önce bildirilmemiş güncellemeleri bildir ya da kur.
   Future<void> afterCheck() async {
     final s = _state, p = _prefs;
     if (s == null || p == null) return;
+    // Duyurular: ilk açılışta eskileri bildirmeden işaretle.
+    final first = !p.containsKey('bildirilenDuyurular');
+    for (final a in s.announcements.reversed) {
+      if (await Announcements.markNotified(a.id) && !first) await _notify(a.title, a.body);
+    }
     final pending = [...s.updates, if (s.selfUpdate) centerApp];
     final told = p.getStringList('bildirilen') ?? const <String>[];
     String tag(OAApp a) => '${a.id}@${s.latest[a.id]?.version}';
@@ -138,11 +161,11 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
         }
       }
       if (done.isNotEmpty) {
-        await _notify('${done.length} uygulama güncellendi', done.join(', '));
+        await _notify(t('{n} uygulama güncellendi', {'n': done.length}), done.join(', '));
       }
       if (left.isNotEmpty) {
-        await _notify('${left.length} güncelleme seni bekliyor',
-            '${left.map((a) => a.name).join(', ')}. Açık olduğu için kurulmadı; OA Labs Center’dan güncelleyebilirsin.');
+        await _notify(t('{n} güncelleme seni bekliyor', {'n': left.length}),
+            t('{names}. Açık olduğu için kurulmadı; OA Labs Center’dan güncelleyebilirsin.', {'names': left.map((a) => a.name).join(', ')}));
       }
       // En son kendini günceller (kurulum OA Labs Center'ı kapatıp yeniden açar).
       if (s.selfUpdate) await s.install(centerApp);
@@ -150,13 +173,14 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
     }
 
     final names = fresh.map((a) => '${a.name} ${s.latest[a.id]?.version ?? ''}'.trim()).join(', ');
-    await _notify(fresh.length == 1 ? 'Güncelleme var' : '${fresh.length} güncelleme var', names);
+    await _notify(fresh.length == 1 ? t('Güncelleme var') : t('{n} güncelleme var', {'n': fresh.length}), names);
   }
 
-  Future<void> _notify(String title, String body) async {
+  Future<void> _notify(String title, String body, {bool always = false}) async {
     if (!_notifyReady) return;
     try {
-      if (await windowManager.isVisible() && await windowManager.isFocused()) return; // ekranda zaten görünüyor
+      // Ekranda zaten görünüyorsa bildirim gereksiz.
+      if (!always && await windowManager.isVisible() && await windowManager.isFocused()) return;
       final n = LocalNotification(title: title, body: body);
       n.onClick = () {
         show();
@@ -201,6 +225,7 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
 
   Future<void> quit() async {
     _timer?.cancel();
+    _remoteTimer?.cancel();
     try {
       await _server?.close();
       await trayManager.destroy();
@@ -219,8 +244,8 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
     final p = _prefs;
     if (p != null && p.getBool('tepsiIpucu') != true) {
       await p.setBool('tepsiIpucu', true);
-      await _notify('OA Labs Center arka planda çalışıyor',
-          'Güncellemeleri denetlemeye devam eder. Saat yanındaki simgeden açabilir ya da kapatabilirsin.');
+      await _notify(t('OA Labs Center arka planda çalışıyor'),
+          t('Güncellemeleri denetlemeye devam eder. Saat yanındaki simgeden açabilir ya da kapatabilirsin.'));
     }
   }
 

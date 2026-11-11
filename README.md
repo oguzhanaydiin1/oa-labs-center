@@ -5,10 +5,19 @@ arayüz OA Labs tasarım sistemini kullanır.
 
 ## Ne yapar
 
-- **Ana sayfa:** Kurulu OA uygulamaları, sürümleri, "Aç" ve "Güncelle". Windows'ta "Hepsini güncelle".
-- **Keşfet:** Kurulu olmayan uygulamalar ("Kur"), yakında çıkacaklar ("Çıkınca haber ver") ve yalnız öbür platformda olanlar.
-- **Hesabım:** OA Labs hesabıyla giriş (e-postaya gelen 6 haneli kod), hesaba bağlı cihazlar.
+- **Ana sayfa:** Duyurular, öbür cihazdan gelen kurulum istekleri, güncellemeler ve kurulu uygulamalar.
+- **Keşfet:** Kurulu olmayan uygulamalar, yakında çıkacaklar ve yalnız öbür platformda olanlar.
+- **Uygulama sayfası:** Özellikler, ekran görüntüleri, sürüm bilgisi ve geçmişi; Kur, Aç, Güncelle, Kaldır.
+- **Yenilikler:** Bütün uygulamaların GitHub sürüm notları tek akışta.
+- **Cihazlarım:** Hesaba bağlı telefon ve bilgisayarlar, üzerlerindeki uygulamalar; uzaktan kurulum isteği.
+- **Destek:** Geri bildirim formu (/v1/feedback) ve iletişim bilgileri.
+- **Hesap ve ayarlar:** Giriş, oturumlar, deneme sürümleri, dil, Windows'ta arka plan, Android'de bildirimler.
 - OA Labs Center kendini de günceller.
+
+## Dil
+
+Metinler Türkçe yazılır ve `t('...')` ile sarılır (`lib/i18n.dart`); İngilizce karşılıkları `lib/i18n_en.dart`
+sözlüğündedir. Yeni bir metin eklenince İngilizcesini de oraya yaz, yoksa İngilizce arayüzde Türkçesi görünür.
 
 ## Nasıl çalışır
 
@@ -19,8 +28,12 @@ arayüz OA Labs tasarım sistemini kullanır.
 | Kurulum | Kurulum programı sessiz çalışır | APK iner, Android kurulum onayını ister |
 | Açma | Kayıttaki exe | Paketin açılış ekranı |
 
-Uygulama listesi `lib/catalog.dart` içindedir. `https://oalabs.dev/center/apps.json` yayımlanırsa uygulama onu
-kullanır; böylece yeni bir uygulama eklemek için OA Labs Center'ı güncellemek gerekmez. Android'de yeni bir
+Uygulama listesi `https://oalabs.dev/center/apps.json` (radyo-app deposunda `docs/center/apps.json`): ad, tanıtım,
+özellikler, ekran görüntüleri, GitHub deposu ve kurulum bilgisi. Uygulama bunu açılışta okur; okuyamazsa
+`assets/catalog.json`daki kopyayı kullanır. Yeni bir uygulama eklemek için OA Labs Center'ı güncellemek gerekmez.
+
+Sunucu tarafı (radyo-app/server/src/center.js): cihaz eşitleme ve uzaktan kurulum (`/v1/me/devices…`,
+`/v1/me/commands…`), duyurular (`/v1/announcements`, panelden `/v1/admin/announcements`). Android'de yeni bir
 paketin görülebilmesi için adı `scripts/android_ayarla.py` içindeki `PACKAGES` listesinde de olmalıdır.
 
 ## Derleme

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'account.dart';
 import 'catalog.dart';
+import 'i18n.dart';
 import 'oa_theme.dart';
 
 /// Android tek giriş: başka bir OA uygulaması "OA Labs Center ile giriş yap" dediğinde
@@ -32,7 +33,7 @@ class LinkRequests {
 
   /// Paket adından katalogdaki OA uygulaması (OA uygulaması değilse null).
   static OAApp? appFor(String package, List<OAApp> apps) {
-    for (final a in [...apps, ...builtinCatalog]) {
+    for (final a in [...apps, ...Catalog.bundled]) {
       if (a.android?.package == package) return a;
     }
     return null;
@@ -66,7 +67,7 @@ class _LinkPromptState extends State<LinkPrompt> {
     if (code == null) {
       setState(() {
         _busy = false;
-        _error = 'Giriş izni verilemedi. İnternet bağlantını kontrol edip yeniden dene.';
+        _error = t('Giriş izni verilemedi. İnternet bağlantını kontrol edip yeniden dene.');
       });
       return;
     }
@@ -92,13 +93,13 @@ class _LinkPromptState extends State<LinkPrompt> {
                     Row(children: [
                       const OAMark(size: 40, ground: OA.surface),
                       const SizedBox(width: 12),
-                      Expanded(child: Text('OA hesabınla giriş', style: oaDisplay(22))),
+                      Expanded(child: Text(t('OA hesabınla giriş'), style: oaDisplay(22))),
                     ]),
                     const SizedBox(height: 14),
                     Text(
                       user == null
-                          ? '${widget.app.name}, OA Labs hesabınla giriş yapmak istiyor. Önce OA Labs Center’da giriş yap.'
-                          : '${widget.app.name}, OA Labs hesabınla giriş yapmak istiyor.',
+                          ? t('{app}, OA Labs hesabınla giriş yapmak istiyor. Önce OA Labs Center’da giriş yap.', {'app': widget.app.name})
+                          : t('{app}, OA Labs hesabınla giriş yapmak istiyor.', {'app': widget.app.name}),
                       style: oaBody(17),
                     ),
                     if (user != null) ...[
@@ -116,7 +117,7 @@ class _LinkPromptState extends State<LinkPrompt> {
                         ]),
                       ),
                       const SizedBox(height: 10),
-                      Text('${widget.app.name} kendi oturumunu açar; Hesabım’daki cihaz listesinde ayrı görünür.',
+                      Text(t('{app} kendi oturumunu açar; oturum listesinde ayrı görünür.', {'app': widget.app.name}),
                           style: oaBody(13, color: OA.muted)),
                     ],
                     if (_error != null) ...[
@@ -125,12 +126,12 @@ class _LinkPromptState extends State<LinkPrompt> {
                     ],
                     const SizedBox(height: 20),
                     if (user == null)
-                      OAButton('Giriş yap', kind: OAButtonKind.primary, big: true, onPressed: widget.onSignIn)
+                      OAButton(t('Giriş yap'), kind: OAButtonKind.primary, big: true, onPressed: widget.onSignIn)
                     else
-                      OAButton(_busy ? 'Bekle…' : 'İzin ver',
+                      OAButton(_busy ? t('Bekle…') : t('İzin ver'),
                           kind: OAButtonKind.primary, big: true, onPressed: _busy ? null : _allow),
                     const SizedBox(height: 10),
-                    OAButton('Vazgeç', onPressed: _busy ? null : () => LinkRequests.answer(null)),
+                    OAButton(t('Vazgeç'), onPressed: _busy ? null : () => LinkRequests.answer(null)),
                   ]),
                 ),
               ),
