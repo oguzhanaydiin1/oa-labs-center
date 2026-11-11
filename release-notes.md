@@ -1,5 +1,9 @@
 # Sürüm notları
 
+## 0.3.1
+
+- Profil fotoğrafın artık görünüyor (oalabs.dev'de Hesabım'dan eklenen); Hesap ve ayarlar'dan değiştirme bağlantısı
+
 ## 0.3.0
 
 - Uygulama sayfası: karta dokununca özellikler, ekran görüntüleri, sürüm bilgisi ve geçmişi; Kur, Aç, Güncelle, Kaldır

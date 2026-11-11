@@ -17,6 +17,7 @@ import 'news_page.dart';
 import 'oa_theme.dart';
 import 'settings.dart';
 import 'support_page.dart';
+import 'widgets.dart';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -185,26 +186,6 @@ class _Badge extends StatelessWidget {
       );
 }
 
-class _Avatar extends StatelessWidget {
-  const _Avatar(this.account, {this.size = 38});
-  final OAAccount account;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final user = account.user;
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: OA.surface2, shape: BoxShape.circle, border: Border.all(color: OA.border)),
-      child: user == null
-          ? Icon(Icons.person_outline, size: size * 0.52, color: OA.text2)
-          : Text(user.initial, style: oaDisplay(size * 0.42)),
-    );
-  }
-}
-
 /// Telefonda üst çubuk: OA işareti, ad ve hesap düğmesi.
 class _TopBar extends StatelessWidget {
   const _TopBar({required this.account, required this.selected, required this.onAccount});
@@ -226,7 +207,7 @@ class _TopBar extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                   shape: BoxShape.circle, border: Border.all(color: selected ? OA.amber : Colors.transparent, width: 2)),
-              child: _Avatar(account, size: 36),
+              child: UserAvatar(account, size: 36),
             ),
           ),
         ]),
@@ -273,7 +254,7 @@ class _SideNav extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
               child: Row(children: [
-                _Avatar(account),
+                UserAvatar(account),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
