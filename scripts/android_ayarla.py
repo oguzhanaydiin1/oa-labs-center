@@ -19,6 +19,8 @@ MANIFEST = 'android/app/src/main/AndroidManifest.xml'
 PERMS = [
     'android.permission.INTERNET',
     'android.permission.REQUEST_INSTALL_PACKAGES',
+    'android.permission.REQUEST_DELETE_PACKAGES',  # "Kaldır": sistemin kaldırma onayı
+    'android.permission.POST_NOTIFICATIONS',       # günlük güncelleme ve duyuru bildirimi
 ]
 
 # Kurulu olup olmadığına bakılan OA uygulamaları
@@ -58,6 +60,25 @@ def native():
                 os.remove(os.path.join(root, f))
     shutil.copytree('platform/android/app/src/main', 'android/app/src/main', dirs_exist_ok=True)
     print('Android: MainActivity kopyalandı')
+
+
+def gradle_deps():
+    """Günlük denetim (GuncellemeIsci) için Android WorkManager."""
+    kts = 'android/app/build.gradle.kts'
+    groovy = 'android/app/build.gradle'
+    if os.path.exists(kts):
+        s = open(kts, encoding='utf-8').read()
+        if 'androidx.work:work-runtime' not in s:
+            s += '\ndependencies {\n    implementation("androidx.work:work-runtime-ktx:2.9.1")\n}\n'
+            open(kts, 'w', encoding='utf-8').write(s)
+    elif os.path.exists(groovy):
+        s = open(groovy, encoding='utf-8').read()
+        if 'androidx.work:work-runtime' not in s:
+            s += "\ndependencies {\n    implementation 'androidx.work:work-runtime-ktx:2.9.1'\n}\n"
+            open(groovy, 'w', encoding='utf-8').write(s)
+    else:
+        sys.exit('android/app/build.gradle(.kts) bulunamadı')
+    print('Gradle: WorkManager eklendi')
 
 
 def signing():
@@ -107,4 +128,5 @@ def signing():
 if __name__ == '__main__':
     manifest()
     native()
+    gradle_deps()
     signing()

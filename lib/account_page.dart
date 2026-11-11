@@ -1,17 +1,25 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'account.dart';
+import 'android_bg.dart';
+import 'desktop.dart';
+import 'i18n.dart';
 import 'oa_theme.dart';
+import 'settings.dart';
 import 'version.dart';
 import 'widgets.dart';
 
-/// Hesabım: e-postaya gelen kodla giriş, hesap bilgisi, bağlı cihazlar.
+/// Hesap ve ayarlar: e-postaya gelen kodla giriş, hesap bilgisi, oturumlar, uygulama ayarları.
 class AccountPage extends StatefulWidget {
-  const AccountPage({super.key, required this.account, required this.wide});
+  const AccountPage({super.key, required this.account, required this.wide, required this.onSettingsChanged});
   final OAAccount account;
   final bool wide;
+
+  /// Beta ya da dil değişince listeler yenilensin.
+  final VoidCallback onSettingsChanged;
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -77,19 +85,102 @@ class _AccountPageState extends State<AccountPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PageFrame(wide: widget.wide, children: [
-      Text('Hesabım', style: oaDisplay(34)),
-      if (account.loading)
-        const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
-      else if (account.signedIn)
-        ..._signedIn(context)
-      else
-        _signIn(context),
-      Text(
-        appVersion == '0.0.0' ? 'OA Labs Center · geliştirme derlemesi' : 'OA Labs Center $appVersion',
-        style: oaBody(13, color: OA.faint),
+    return ListenableBuilder(
+      listenable: Listenable.merge([Settings.i, Desktop.i]),
+      builder: (context, _) => PageFrame(wide: widget.wide, children: [
+        PageTitle(t('Hesap ve ayarlar')),
+        if (account.loading)
+          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+        else if (account.signedIn)
+          ..._signedIn(context)
+        else
+          _signIn(context),
+        _settings(),
+        Text(
+          appVersion == '0.0.0' ? t('OA Labs Center · geliştirme derlemesi') : 'OA Labs Center $appVersion',
+          style: oaBody(13, color: OA.faint),
+        ),
+      ]),
+    );
+  }
+
+  Widget _settings() {
+    final s = Settings.i;
+    final d = Desktop.i;
+    final rows = <Widget>[
+      SwitchRow(
+        title: t('Deneme sürümlerini al'),
+        subtitle: t('Yeni özellikler yayından önce gelir; ara sıra hata çıkabilir. Kapatınca bir sonraki kararlı sürümü beklersin.'),
+        value: s.beta,
+        onChanged: (v) async {
+          await s.setBeta(v);
+          widget.onSettingsChanged();
+        },
       ),
-    ]);
+      if (Platform.isWindows) ...[
+        const Divider(height: 1, color: OA.line),
+        SwitchRow(
+          title: t('Windows açılışında arka planda çalış'),
+          subtitle: t('Güncellemeleri 6 saatte bir denetler, yenisi çıkınca haber verir. Pencere kapanınca saat yanındaki simgeye iner.'),
+          value: d.background,
+          onChanged: d.setBackground,
+        ),
+        const Divider(height: 1, color: OA.line),
+        SwitchRow(
+          title: t('Güncellemeleri kendiliğinden kur'),
+          subtitle: t('Arka planda kurar; o an açık olan uygulamayı kapatmamak için ona dokunmaz, yalnız haber verir.'),
+          value: d.autoUpdate,
+          onChanged: d.background ? d.setAutoUpdate : null,
+        ),
+      ],
+      if (Platform.isAndroid) ...[
+        const Divider(height: 1, color: OA.line),
+        SwitchRow(
+          title: t('Güncelleme ve duyuru bildirimleri'),
+          subtitle: t('Günde bir kez yeni sürümleri ve OA Labs duyurularını denetler, varsa bildirim gösterir.'),
+          value: s.androidNotify,
+          onChanged: (v) async {
+            await s.setAndroidNotify(v);
+            await AndroidBackground.apply();
+          },
+        ),
+      ],
+      const Divider(height: 1, color: OA.line),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(children: [
+          Expanded(child: Text(t('Dil'), style: oaBody(17, weight: FontWeight.w600))),
+          SegmentedButton<String>(
+            showSelectedIcon: false,
+            style: SegmentedButton.styleFrom(
+              backgroundColor: OA.surface2,
+              foregroundColor: OA.text,
+              selectedBackgroundColor: OA.amber,
+              selectedForegroundColor: OA.amberInk,
+              side: const BorderSide(color: OA.border),
+            ),
+            segments: [
+              ButtonSegment(value: 'auto', label: Text(t('Cihaz'))),
+              const ButtonSegment(value: 'tr', label: Text('Türkçe')),
+              const ButtonSegment(value: 'en', label: Text('English')),
+            ],
+            selected: {s.lang},
+            onSelectionChanged: (v) async {
+              await s.setLang(v.first);
+              widget.onSettingsChanged();
+            },
+          ),
+        ]),
+      ),
+    ];
+    return OACard(
+      padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(t('Ayarlar'), style: oaDisplay(22)),
+        const SizedBox(height: 4),
+        ...rows,
+      ]),
+    );
   }
 
   Widget _signIn(BuildContext context) {
@@ -100,12 +191,12 @@ class _AccountPageState extends State<AccountPage> {
         child: OACard(
           padding: const EdgeInsets.all(24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-            Text('Giriş yap', style: oaDisplay(24)),
+            Text(t('Giriş yap'), style: oaDisplay(24)),
             const SizedBox(height: 6),
             Text(
               _codeSent
-                  ? '${_email.text.trim()} adresine 6 haneli bir kod gönderdik.'
-                  : 'Şifre yok: e-posta adresini yaz, sana bir giriş kodu gönderelim.',
+                  ? t('{email} adresine 6 haneli bir kod gönderdik.', {'email': _email.text.trim()})
+                  : t('Şifre yok: e-posta adresini yaz, sana bir giriş kodu gönderelim. Giriş yapınca Pusula Browser da girişli açılır.'),
               style: oaBody(15, color: OA.text2),
             ),
             const SizedBox(height: 18),
@@ -118,7 +209,7 @@ class _AccountPageState extends State<AccountPage> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _send(),
                 style: oaBody(17),
-                decoration: const InputDecoration(labelText: 'E-posta adresin', hintText: 'ornek@eposta.com'),
+                decoration: InputDecoration(labelText: t('E-posta adresin'), hintText: 'ornek@eposta.com'),
               )
             else
               TextField(
@@ -130,7 +221,7 @@ class _AccountPageState extends State<AccountPage> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _verify(),
                 style: oaBody(22, weight: FontWeight.w600),
-                decoration: const InputDecoration(labelText: 'Giriş kodu', hintText: '6 haneli kod'),
+                decoration: InputDecoration(labelText: t('Giriş kodu'), hintText: t('6 haneli kod')),
               ),
             if (_error != null) ...[
               const SizedBox(height: 10),
@@ -138,7 +229,7 @@ class _AccountPageState extends State<AccountPage> {
             ],
             const SizedBox(height: 18),
             OAButton(
-              _busy ? 'Bekle…' : (_codeSent ? 'Giriş yap' : 'Kod gönder'),
+              _busy ? t('Bekle…') : (_codeSent ? t('Giriş yap') : t('Kod gönder')),
               kind: OAButtonKind.primary,
               big: true,
               onPressed: _busy ? null : (_codeSent ? _verify : _send),
@@ -146,7 +237,7 @@ class _AccountPageState extends State<AccountPage> {
             const SizedBox(height: 10),
             if (_codeSent)
               OAButton(
-                'Başka e-posta kullan',
+                t('Başka e-posta kullan'),
                 onPressed: _busy
                     ? null
                     : () => setState(() {
@@ -157,8 +248,8 @@ class _AccountPageState extends State<AccountPage> {
               )
             else
               OAButton(
-                'Üyeliğin yok mu? oalabs.dev’de üye ol',
-                onPressed: () => launchUrl(Uri.parse('https://oalabs.dev/uye/'), mode: LaunchMode.externalApplication),
+                t('Üyeliğin yok mu? oalabs.dev’de üye ol'),
+                onPressed: () => openLink(L.en ? 'https://oalabs.dev/en/uye/' : 'https://oalabs.dev/uye/'),
               ),
           ]),
         ),
@@ -175,11 +266,7 @@ class _AccountPageState extends State<AccountPage> {
             width: 56,
             height: 56,
             alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: OA.surface2,
-              shape: BoxShape.circle,
-              border: Border.all(color: OA.border),
-            ),
+            decoration: BoxDecoration(color: OA.surface2, shape: BoxShape.circle, border: Border.all(color: OA.border)),
             child: Text(u.initial, style: oaDisplay(22)),
           ),
           const SizedBox(width: 16),
@@ -195,9 +282,9 @@ class _AccountPageState extends State<AccountPage> {
       if (account.sessions.isNotEmpty)
         OACard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-            Text('Cihazlar', style: oaDisplay(20)),
+            Text(t('Oturumlar'), style: oaDisplay(20)),
             const SizedBox(height: 4),
-            Text('Hesabınla giriş yapılmış cihazlar ve uygulamalar.', style: oaBody(15, color: OA.text2)),
+            Text(t('Hesabınla giriş yapılmış uygulamalar ve tarayıcılar.'), style: oaBody(15, color: OA.text2)),
             for (final s in account.sessions) ...[
               const SizedBox(height: 12),
               const Divider(height: 1, color: OA.line),
@@ -206,27 +293,19 @@ class _AccountPageState extends State<AccountPage> {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                     Text(s.device, style: oaBody(17)),
-                    Text(s.current ? 'Bu cihaz' : _seen(s.lastSeen), style: oaBody(13, color: OA.muted)),
+                    Text(s.current ? t('Bu oturum') : t('son görülme {ago}', {'ago': agoText(s.lastSeen)}),
+                        style: oaBody(13, color: OA.muted)),
                   ]),
                 ),
-                if (!s.current) OAButton('Çıkış yaptır', onPressed: () => account.dropSession(s)),
+                if (!s.current) OAButton(t('Çıkış yaptır'), onPressed: () => account.dropSession(s)),
               ]),
             ],
           ]),
         ),
       Align(
         alignment: Alignment.centerLeft,
-        child: OAButton('Çıkış yap', kind: OAButtonKind.danger, big: true, onPressed: () => account.logout()),
+        child: OAButton(t('Çıkış yap'), kind: OAButtonKind.danger, big: true, onPressed: () => account.logout()),
       ),
     ];
-  }
-
-  String _seen(DateTime? t) {
-    if (t == null) return 'Son görülme bilinmiyor';
-    final d = DateTime.now().difference(t.toLocal());
-    if (d.inMinutes < 10) return 'Az önce görüldü';
-    if (d.inHours < 1) return '${d.inMinutes} dakika önce görüldü';
-    if (d.inDays < 1) return '${d.inHours} saat önce görüldü';
-    return '${d.inDays} gün önce görüldü';
   }
 }

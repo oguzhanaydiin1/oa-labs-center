@@ -1,54 +1,50 @@
 import 'package:flutter/material.dart';
 
 import 'account.dart';
+import 'app_page.dart';
 import 'catalog.dart';
 import 'center_state.dart';
+import 'i18n.dart';
 import 'oa_theme.dart';
 import 'widgets.dart';
 
 /// Keşfet: henüz kurulu olmayan, yakında çıkacak ve öbür platformdaki OA uygulamaları.
 class DiscoverPage extends StatelessWidget {
-  const DiscoverPage({super.key, required this.state, required this.account, required this.wide, required this.onAccount});
+  const DiscoverPage({super.key, required this.state, required this.account, required this.wide});
   final CenterState state;
   final OAAccount account;
   final bool wide;
-  final VoidCallback onAccount;
 
   @override
   Widget build(BuildContext context) {
     final available = state.available;
     final others = state.others;
     return PageFrame(wide: wide, children: [
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Keşfet', style: oaDisplay(34)),
-        const SizedBox(height: 6),
-        Text('Henüz kurmadığın OA uygulamaları.', style: oaBody(wide ? 17 : 15, color: OA.text2)),
-      ]),
+      PageTitle(t('Keşfet'), lead: t('Henüz kurmadığın OA uygulamaları. Ayrıntılar için karta dokun.')),
       if (state.loading)
         const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
       else ...[
-        if (available.isEmpty && others.isEmpty)
-          OACard(child: Text('Bütün OA uygulamaları kurulu.', style: oaBody(15, color: OA.text2))),
-        if (available.isNotEmpty)
-          CardGrid(children: [for (final a in available) _DiscoverCard(state: state, account: account, app: a, onAccount: onAccount)]),
-        if (available.isEmpty && others.isNotEmpty)
+        if (available.isEmpty)
           OACard(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Text('Bu cihaza kurulabilen bütün OA uygulamaları kurulu.', style: oaBody(15, color: OA.text2)),
+            child: Text(t('Bu cihaza kurulabilen bütün OA uygulamaları kurulu.'), style: oaBody(15, color: OA.text2)),
           ),
-        if (others.isNotEmpty)
-          CardGrid(children: [for (final a in others) _DiscoverCard(state: state, account: account, app: a, onAccount: onAccount)]),
+        if (available.isNotEmpty)
+          CardGrid(children: [for (final a in available) _DiscoverCard(state: state, account: account, app: a)]),
+        if (others.isNotEmpty) ...[
+          Text(t('Yakında ve öbür cihazlar için'), style: oaDisplay(22)),
+          CardGrid(children: [for (final a in others) _DiscoverCard(state: state, account: account, app: a)]),
+        ],
       ],
     ]);
   }
 }
 
 class _DiscoverCard extends StatelessWidget {
-  const _DiscoverCard({required this.state, required this.account, required this.app, required this.onAccount});
+  const _DiscoverCard({required this.state, required this.account, required this.app});
   final CenterState state;
   final OAAccount account;
   final OAApp app;
-  final VoidCallback onAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -59,67 +55,60 @@ class _DiscoverCard extends StatelessWidget {
     Widget action;
     if (app.soon) {
       final on = account.user?.notify.contains(app.id) ?? false;
-      action = OAButton(
-        on ? 'Haber vereceğiz · Vazgeç' : 'Çıkınca haber ver',
-        onPressed: () async {
-          if (!account.signedIn) {
-            toast(context, 'Haber verebilmemiz için önce giriş yap.');
-            onAccount();
-            return;
-          }
-          final messenger = ScaffoldMessenger.of(context);
-          final ok = await account.setNotify(app.id, !on);
-          final text = !ok
-              ? 'Kaydedilemedi, biraz sonra tekrar dene.'
-              : on
-                  ? '${app.name} için bildirim kapatıldı.'
-                  : '${app.name} çıkınca e-postayla haber vereceğiz.';
-          messenger
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(text)));
-        },
-      );
+      action = OAButton(on ? t('Haber vereceğiz · Vazgeç') : t('Çıkınca haber ver'), onPressed: () => toggleNotify(context, account, app));
     } else if (only != null) {
-      action = Text('$only sürümünü o cihazdaki OA Labs Center’dan kurabilirsin.', style: oaBody(13, color: OA.muted));
+      action = Text(t('{p} sürümünü o cihazdaki OA Labs Center’dan kurabilirsin.', {'p': only}), style: oaBody(13, color: OA.muted));
     } else if (job != null) {
       final p = job.progress;
       action = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
         Text(p != null ? '${job.label} · %${(p * 100).round()}' : '${job.label}…', style: oaBody(13, color: OA.muted)),
         const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(value: p, minHeight: 4),
-        ),
+        ClipRRect(borderRadius: BorderRadius.circular(999), child: LinearProgressIndicator(value: p, minHeight: 4)),
       ]);
     } else {
       action = Row(children: [
-        OAButton('Kur', kind: OAButtonKind.primary, onPressed: () => runInstall(context, state, app)),
+        OAButton(t('Kur'), kind: OAButtonKind.primary, onPressed: () => runInstall(context, state, app)),
         if (rel != null) ...[
           const SizedBox(width: 12),
-          Text('Sürüm ${rel.version}', style: oaBody(13, color: OA.muted)),
+          Flexible(
+            child: Text(
+              [t('Sürüm {v}', {'v': rel.version}), if (rel.size > 0) sizeText(rel.size)].join(' · '),
+              style: oaBody(13, color: OA.muted),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ]);
     }
 
-    return OACard(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          AppIcon(app),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              Text(app.name, style: oaDisplay(20)),
-              if (app.soon) const OAChip('Yakında', ink: OA.soonInk, bg: OA.soonBg),
-              if (app.beta) const OAChip('Beta', ink: OA.betaInk, bg: OA.betaBg),
-              if (only != null) OAChip('Yalnız $only'),
+    return Material(
+      color: OA.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: OA.border)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => openAppPage(context, state, account, app),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Row(children: [
+              AppIcon(app),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                  Text(app.name, style: oaDisplay(20)),
+                  if (app.soon) OAChip(t('Yakında'), ink: OA.soonInk, bg: OA.soonBg),
+                  if (app.beta) OAChip(t('Beta'), ink: OA.betaInk, bg: OA.betaBg),
+                  if (only != null) OAChip(t('Yalnız {p}', {'p': only})),
+                ]),
+              ),
             ]),
-          ),
-        ]),
-        const SizedBox(height: 12),
-        Text(app.tagline, style: oaBody(15, color: OA.text2)),
-        const SizedBox(height: 16),
-        action,
-      ]),
+            const SizedBox(height: 12),
+            Text(app.localTagline, style: oaBody(15, color: OA.text2)),
+            const SizedBox(height: 16),
+            action,
+          ]),
+        ),
+      ),
     );
   }
 }

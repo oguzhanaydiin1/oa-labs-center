@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import 'i18n.dart';
 import 'shared_session.dart';
 import 'version.dart';
 
@@ -45,7 +46,7 @@ class OASession {
     if (j is! Map) return null;
     return OASession(
       id: (j['id'] ?? '').toString(),
-      device: (j['device'] ?? 'Bilinmeyen cihaz').toString(),
+      device: (j['device'] ?? t('Bilinmeyen cihaz')).toString(),
       lastSeen: DateTime.tryParse((j['lastSeen'] ?? '').toString()),
       current: j['current'] == true,
     );
@@ -67,7 +68,7 @@ const _errors = <String, String>{
   'ag': 'Sunucuya ulaşılamadı. İnternet bağlantını kontrol et.',
 };
 
-String accountError(String? code) => _errors[code] ?? 'Bir sorun çıktı, biraz sonra tekrar dene.';
+String accountError(String? code) => t(_errors[code] ?? 'Bir sorun çıktı, biraz sonra tekrar dene.');
 
 class OAAccount extends ChangeNotifier {
   static const api = 'https://api.oalabs.dev';
@@ -138,6 +139,9 @@ class OAAccount extends ChangeNotifier {
     return r['ok'] == true && code is String ? code : null;
   }
 
+  /// Oturumla sunucu isteği (cihazlar, uzaktan kurulum). Gövde verilirse POST.
+  Future<Map<String, dynamic>> api(String path, [Map<String, dynamic>? body]) => _call(path, body);
+
   /// [as]: bu istek için kendi oturumu yerine verilen anahtarı kullan (ortak oturumla kod almak için).
   Future<Map<String, dynamic>> _call(String path, [Map<String, dynamic>? body, String? as]) async {
     try {
@@ -145,7 +149,7 @@ class OAAccount extends ChangeNotifier {
       final res = body == null
           ? await http.get(uri, headers: _headers(as: as)).timeout(const Duration(seconds: 12))
           : await http
-              .post(uri, headers: _headers(json: true, as: as), body: jsonEncode({'lang': 'tr', ...body}))
+              .post(uri, headers: _headers(json: true, as: as), body: jsonEncode({'lang': L.code, ...body}))
               .timeout(const Duration(seconds: 12));
       if (as == null) _readCookie(res.headers['set-cookie']);
       final data = jsonDecode(utf8.decode(res.bodyBytes));
