@@ -1,0 +1,38 @@
+# Android'de açılış denemesi: son sürümün APK'sını emülatöre kurar, açar ve çökme kaydını yazar.
+# android-dene dalına gönderilince çalışır; sürüm yayınlamaz.
+name: Android denemesi
+on:
+  push:
+    branches: [android-dene]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: APK indir
+        run: |
+          sleep 600 # 0.3.1 derlemesi bitsin
+          curl -sSL -o center.apk https://github.com/${{ github.repository }}/releases/latest/download/OA-Labs-Center-Android.apk && ls -l center.apk
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            adb install -r center.apk
+            adb logcat -c
+            adb shell monkey -p dev.oalabs.oa_center -c android.intent.category.LAUNCHER 1
+            sleep 25
+            echo "===== surec"; adb shell pidof dev.oalabs.oa_center || echo "CALISMIYOR"
+            echo "===== cokme"; adb logcat -d -b crash || true
+            echo "===== hatalar"; adb logcat -d '*:E' | tail -150 || true
