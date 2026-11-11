@@ -1,5 +1,9 @@
 # Sürüm notları
 
+## 0.3.2
+
+- Düzeltme: Android'de uygulama açılır açılmaz "sürekli duruyor" diye kapanıyordu (0.3.0 ve 0.3.1)
+
 ## 0.3.1
 
 - Profil fotoğrafın artık görünüyor (oalabs.dev'de Hesabım'dan eklenen); Hesap ve ayarlar'dan değiştirme bağlantısı
