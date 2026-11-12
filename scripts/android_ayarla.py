@@ -29,7 +29,6 @@ PACKAGES = [
     'dev.oalabs.pusula_kopru',  # Pusula Köprü
     'dev.oalabs.radyo',         # OA Radyo
     'dev.oalabs.harrier',       # Harrier Cleaner
-    'dev.oalabs.oa_score',
     'dev.oalabs.terazi',        # Terazi
 ]
 
