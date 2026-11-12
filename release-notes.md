@@ -1,5 +1,9 @@
 # Sürüm notları
 
+## 0.3.3
+
+- Yeni uygulama: Terazi (gelir gider takibi, beta) Keşfet'te
+
 ## 0.3.2
 
 - Düzeltme: Android'de uygulama açılır açılmaz "sürekli duruyor" diye kapanıyordu (0.3.0 ve 0.3.1)

@@ -31,6 +31,7 @@ PACKAGES = [
     'dev.oalabs.harrier',       # Harrier Cleaner
     'dev.oalabs.oa_score',
     'dev.oalabs.oa_barkod',
+    'dev.oalabs.terazi',        # Terazi
 ]
 
 
