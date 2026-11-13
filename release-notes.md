@@ -1,5 +1,10 @@
 # Sürüm notları
 
+## 0.3.4
+
+- "Güncellemeleri denetle" bazen "Denetleniyor…" yazısında takılı kalıyordu, düzeltildi
+- Takılan indirmeler artık yarıda bırakılıp hata gösteriyor
+
 ## 0.3.3
 
 - Yeni uygulama: Terazi (gelir gider takibi, beta) Keşfet'te

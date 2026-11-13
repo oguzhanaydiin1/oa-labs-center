@@ -28,13 +28,16 @@ Future<File?> downloadSetup(String url, String fileName, void Function(double) o
     final safe = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     final f = File('${dir.path}${Platform.pathSeparator}$safe');
     if (f.existsSync()) f.deleteSync();
-    final res = await client.send(http.Request('GET', Uri.parse(url))..headers['User-Agent'] = 'OALabsCenter/$appVersion');
+    final res = await client
+        .send(http.Request('GET', Uri.parse(url))..headers['User-Agent'] = 'OALabsCenter/$appVersion')
+        .timeout(const Duration(seconds: 30));
     if (res.statusCode != 200) return null;
     final sink = f.openWrite();
     final total = res.contentLength ?? 0;
     var got = 0;
     try {
-      await for (final chunk in res.stream) {
+      // 60 saniye hiç veri gelmezse indirme bırakılır (bağlantı takıldıysa).
+      await for (final chunk in res.stream.timeout(const Duration(seconds: 60))) {
         sink.add(chunk);
         got += chunk.length;
         if (total > 0) onProgress(got / total);

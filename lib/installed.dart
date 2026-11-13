@@ -53,7 +53,7 @@ Future<Map<String, Installed>> readInstalled(List<OAApp> apps, {bool userOnly = 
       final t = app.android;
       if (t == null) continue;
       try {
-        final v = await _channel.invokeMethod<String>('surum', {'paket': t.package});
+        final v = await _channel.invokeMethod<String>('surum', {'paket': t.package}).timeout(const Duration(seconds: 5));
         if (v != null && v.isNotEmpty) out[app.id] = Installed(v);
       } catch (_) {}
     }
@@ -168,7 +168,8 @@ Future<List<_RegEntry>> _uninstallEntries({required bool userOnly}) async {
   final results = await Future.wait(roots.map((root) async {
     try {
       // reg.exe çıktısı konsolun kod sayfasında gelir; anahtar adları ve sürümler ASCII olduğu için latin1 yeter.
-      final r = await Process.run('reg', ['query', root, '/s'], stdoutEncoding: latin1, stderrEncoding: latin1);
+      final r = await Process.run('reg', ['query', root, '/s'], stdoutEncoding: latin1, stderrEncoding: latin1)
+          .timeout(const Duration(seconds: 20));
       return r.exitCode == 0 ? r.stdout.toString() : '';
     } catch (_) {
       return '';

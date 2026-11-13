@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -86,6 +87,21 @@ class CenterState extends ChangeNotifier {
     checking = true;
     notifyListeners();
     try {
+      // Bir istek takılsa bile "Denetleniyor…" sonsuza kadar kalmasın.
+      await _check(force).timeout(const Duration(seconds: 45));
+    } catch (_) {
+      // Ağ ya da kayıt okunamadıysa eldeki bilgi gösterilmeye devam eder.
+    } finally {
+      loading = false;
+      checking = false;
+      notifyListeners();
+    }
+    // Cihaz kaydı ve uzaktan kurulum istekleri denetimi bekletmesin (Windows'ta kurulum dakikalar sürebilir).
+    unawaited(syncDevice());
+  }
+
+  Future<void> _check(bool force) async {
+    {
       if (loading) apps = await Catalog.cached();
       installed = await readInstalled(_all);
       loading = false;
@@ -111,13 +127,6 @@ class CenterState extends ChangeNotifier {
           dismissed = await Announcements.dismissed();
         }(),
       ]);
-      await syncDevice();
-    } catch (_) {
-      // Ağ ya da kayıt okunamadıysa eldeki bilgi gösterilmeye devam eder.
-    } finally {
-      loading = false;
-      checking = false;
-      notifyListeners();
     }
   }
 
