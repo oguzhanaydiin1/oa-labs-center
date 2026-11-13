@@ -146,6 +146,8 @@
     "Ödeme takvimi: kredi, kira, abonelik bir kez eklenir, her ay kendiliğinden gelir",
     "Ödeme günü \"Ödendi mi?\" sorusu ve bildirim",
     "Kategori bütçeleri ve aylık raporlar",
+    "Belgeler: fatura, sigorta, garanti; cihazında şifreli",
+    "Parolalı yedek dosyası",
     "Veriler yalnızca cihazında"
    ],
    "features_en": [
@@ -153,6 +155,8 @@
     "Payment calendar: add a loan, rent or subscription once and it repeats every month",
     "\"Paid yet?\" prompt and notification on the payment day",
     "Category budgets and monthly reports",
+    "Documents: bills, insurance, warranties; encrypted on your device",
+    "Password-protected backup file",
     "Your data stays on your device"
    ],
    "windows": {
