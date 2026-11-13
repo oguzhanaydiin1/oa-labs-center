@@ -10,6 +10,7 @@ import 'package:window_manager/window_manager.dart';
 import 'announcements.dart';
 import 'catalog.dart';
 import 'center_state.dart';
+import 'kapat.dart';
 import 'i18n.dart';
 import 'installed.dart';
 
@@ -231,23 +232,26 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
   Future<void> quit() async {
     if (_quitting) return;
     _quitting = true;
-    // Ne olursa olsun 4 saniye içinde süreç kapanır; ekran asla donuk kalmaz.
-    Timer(const Duration(seconds: 4), () => exit(0));
+    kapanisGunlugu('basladi');
+    // Ne olursa olsun 3 saniye içinde süreç kapanır; ekran asla donuk kalmaz.
+    Timer(const Duration(seconds: 3), () => hemenKapat());
     _timer?.cancel();
     _remoteTimer?.cancel();
-    Future<void> adim(Future<void> Function() f) async {
+    Future<void> adim(String ad, Future<void> Function() f) async {
+      kapanisGunlugu(ad);
       try {
-        await f().timeout(const Duration(seconds: 1));
-      } catch (_) {}
+        await f().timeout(const Duration(milliseconds: 800));
+      } catch (e) {
+        kapanisGunlugu('$ad hata: $e');
+      }
     }
 
-    await adim(() async => windowManager.hide());
-    await adim(() async => _server?.close());
-    await adim(() async => trayManager.removeListener(this));
-    await adim(() => trayManager.destroy());
-    await adim(() => windowManager.setPreventClose(false));
-    await adim(() => windowManager.destroy());
-    exit(0);
+    await adim('pencere gizleniyor', () async => windowManager.hide());
+    await adim('sunucu kapaniyor', () async => _server?.close());
+    trayManager.removeListener(this);
+    // Simge kaldırılmazsa görev çubuğunda fare üstüne gelene kadar kalır.
+    await adim('simge kaldiriliyor', () => trayManager.destroy());
+    hemenKapat();
   }
 
   @override

@@ -1,5 +1,10 @@
 # Sürüm notları
 
+## 0.3.6
+
+- Çıkışta ekranın donması için ikinci düzeltme: uygulama artık kapanırken hiçbir şey beklemeden anında sonlanıyor
+- Kapanış adımları geçici klasördeki oa-center-kapanis.log dosyasına yazılıyor
+
 ## 0.3.5
 
 - Saat yanındaki simgeden "Çıkış" denince ekran donup tıklamalar çalışmıyordu, düzeltildi

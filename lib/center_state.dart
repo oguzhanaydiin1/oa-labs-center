@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:tray_manager/tray_manager.dart';
 
 import 'account.dart';
 import 'announcements.dart';
@@ -10,6 +11,7 @@ import 'devices.dart';
 import 'i18n.dart';
 import 'installed.dart';
 import 'installer.dart';
+import 'kapat.dart';
 import 'releases.dart';
 import 'settings.dart';
 import 'version.dart';
@@ -268,7 +270,10 @@ class CenterState extends ChangeNotifier {
     if (app.self) {
       // Kurulum, OA Labs Center'ı kapatıp yeni sürümü kendisi açar.
       await Future<void>.delayed(const Duration(milliseconds: 800));
-      exit(0);
+      try {
+        await trayManager.destroy().timeout(const Duration(milliseconds: 800));
+      } catch (_) {}
+      hemenKapat();
     }
     // Kurulum arka planda sürer; kayıttaki sürüm yenilenene kadar bekle (en çok 4 dakika).
     var done = false;
