@@ -1,7 +1,7 @@
 name: oa_center
 description: OA Labs Center — OA Labs uygulamalarını tek yerden kur, güncelle ve aç.
 publish_to: 'none'
-version: 0.3.4+8
+version: 0.3.5+9
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

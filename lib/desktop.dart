@@ -223,14 +223,30 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
     } catch (_) {}
   }
 
+  bool _quitting = false;
+
+  /// Uygulamayı kapatır. Tepsi menüsünden çağrıldığında Windows'un menü döngüsü
+  /// bitmeden pencereyi yıkmamak için önce kısa bir süre bekler; hiçbir adım
+  /// takılırsa birkaç saniye sonra süreç zorla kapanır.
   Future<void> quit() async {
+    if (_quitting) return;
+    _quitting = true;
+    // Ne olursa olsun 4 saniye içinde süreç kapanır; ekran asla donuk kalmaz.
+    Timer(const Duration(seconds: 4), () => exit(0));
     _timer?.cancel();
     _remoteTimer?.cancel();
-    try {
-      await _server?.close();
-      await trayManager.destroy();
-      await windowManager.setPreventClose(false);
-    } catch (_) {}
+    Future<void> adim(Future<void> Function() f) async {
+      try {
+        await f().timeout(const Duration(seconds: 1));
+      } catch (_) {}
+    }
+
+    await adim(() async => windowManager.hide());
+    await adim(() async => _server?.close());
+    await adim(() async => trayManager.removeListener(this));
+    await adim(() => trayManager.destroy());
+    await adim(() => windowManager.setPreventClose(false));
+    await adim(() => windowManager.destroy());
     exit(0);
   }
 
@@ -253,7 +269,17 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
   void onTrayIconMouseDown() => show();
 
   @override
-  void onTrayIconRightMouseDown() => trayManager.popUpContextMenu();
+  void onTrayIconRightMouseDown() async {
+    // Menü açılmadan önce pencere öne alınmazsa Windows menüyü kapatamaz ve
+    // fare menüde takılı kalır; görünmez pencereyi öne almak için focus yeter.
+    try {
+      await trayManager.popUpContextMenu(bringAppToFront: true);
+    } catch (_) {
+      try {
+        await trayManager.popUpContextMenu();
+      } catch (_) {}
+    }
+  }
 
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
@@ -263,7 +289,8 @@ class Desktop extends ChangeNotifier with WindowListener, TrayListener {
       case 'check':
         check();
       case 'exit':
-        quit();
+        // Menü kapanıp Windows fareyi bırakana kadar bekle, sonra kapat.
+        Future<void>.delayed(const Duration(milliseconds: 250), quit);
     }
   }
 }

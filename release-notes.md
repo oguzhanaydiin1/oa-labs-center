@@ -1,5 +1,10 @@
 # Sürüm notları
 
+## 0.3.5
+
+- Saat yanındaki simgeden "Çıkış" denince ekran donup tıklamalar çalışmıyordu, düzeltildi
+- Kapanırken bir adım takılırsa uygulama birkaç saniye içinde kendiliğinden kapanıyor
+
 ## 0.3.4
 
 - "Güncellemeleri denetle" bazen "Denetleniyor…" yazısında takılı kalıyordu, düzeltildi
