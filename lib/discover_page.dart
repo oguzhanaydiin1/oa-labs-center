@@ -83,7 +83,7 @@ class _DiscoverCard extends StatelessWidget {
 
     return Material(
       color: OA.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: OA.border)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: OA.border)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => openAppPage(context, state, account, app),

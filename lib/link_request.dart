@@ -91,7 +91,7 @@ class _LinkPromptState extends State<LinkPrompt> {
                   padding: const EdgeInsets.all(24),
                   child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     Row(children: [
-                      const OAMark(size: 40, ground: OA.surface),
+                      OAMark(size: 40, ground: OA.surface),
                       const SizedBox(width: 12),
                       Expanded(child: Text(t('OA hesabınla giriş'), style: oaDisplay(22))),
                     ]),

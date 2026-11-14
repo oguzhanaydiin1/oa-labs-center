@@ -1,52 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// OA Labs renkleri: oalabs.dev site.css ile birebir (tek tema: koyu).
+/// OA Labs renkleri: koyu tema oalabs.dev site.css ile birebir; açık tema aynı tonların krem zeminli hâli
+/// (OA Radyo ve Terazi ile aynı). [koyu] açılışta ve tema değişince Settings tarafından ayarlanır.
 class OA {
   OA._();
-  static const bg = Color(0xFF0D0F16);
-  static const bg2 = Color(0xFF11131C);
-  static const surface = Color(0xFF151824);
-  static const surface2 = Color(0xFF1C2030);
-  static const line = Color(0xFF1E2232);
-  static const border = Color(0xFF262B3D);
-  static const border2 = Color(0xFF2A2F43);
-  static const text = Color(0xFFEEEAE2);
-  static const text2 = Color(0xFFB7BACA);
-  static const muted = Color(0xFF9EA2B3);
-  static const faint = Color(0xFF7E8296);
-  static const amber = Color(0xFFF2A541);
-  static const amberHi = Color(0xFFF7BF6E);
+  static bool koyu = true;
+  static Color _r(int d, int l) => Color(koyu ? d : l);
+  static Color get bg => _r(0xFF0D0F16, 0xFFF6F3EC);
+  static Color get bg2 => _r(0xFF11131C, 0xFFEFEBE2);
+  static Color get surface => _r(0xFF151824, 0xFFFFFFFF);
+  static Color get surface2 => _r(0xFF1C2030, 0xFFF0ECE3);
+  static Color get line => _r(0xFF1E2232, 0xFFE7E1D5);
+  static Color get border => _r(0xFF262B3D, 0xFFE3DDD0);
+  static Color get border2 => _r(0xFF2A2F43, 0xFFD6CFBF);
+  static Color get text => _r(0xFFEEEAE2, 0xFF1A1710);
+  static Color get text2 => _r(0xFFB7BACA, 0xFF4A4336);
+  static Color get muted => _r(0xFF9EA2B3, 0xFF6B6457);
+  static Color get faint => _r(0xFF7E8296, 0xFF8F8878);
+  static Color get amber => _r(0xFFF2A541, 0xFFE0901F);
+  static Color get amberHi => _r(0xFFF7BF6E, 0xFFC97A12);
   static const amberInk = Color(0xFF14110A);
-  static const green = Color(0xFF5BC48C);
-  static const blue = Color(0xFF6EA8FE);
-  static const danger = Color(0xFFF08A7E);
-  static const soonInk = Color(0xFF7CC88A);
-  static const soonBg = Color(0x247CC88A);
-  static const betaInk = Color(0xFF8FB8FF);
-  static const betaBg = Color(0x246EA8FE);
-  static const tileDim = Color(0xFF5D606B);
+  static Color get green => _r(0xFF5BC48C, 0xFF2E9D63);
+  static Color get blue => _r(0xFF6EA8FE, 0xFF3B7DDB);
+  static Color get danger => _r(0xFFF08A7E, 0xFFD2553F);
+  static Color get soonInk => _r(0xFF7CC88A, 0xFF2E8B4A);
+  static Color get soonBg => _r(0x247CC88A, 0x262E9D63);
+  static Color get betaInk => _r(0xFF8FB8FF, 0xFF2F68C4);
+  static Color get betaBg => _r(0x246EA8FE, 0x263B7DDB);
+  static Color get tileDim => _r(0xFF5D606B, 0xFFB5AE9F);
 }
 
 /// Başlık yazısı: Bricolage Grotesque 800.
-TextStyle oaDisplay(double size, {Color color = OA.text}) => GoogleFonts.bricolageGrotesque(
+TextStyle oaDisplay(double size, {Color? color}) => GoogleFonts.bricolageGrotesque(
       fontSize: size,
       fontWeight: FontWeight.w800,
-      color: color,
+      color: color ?? OA.text,
       letterSpacing: -0.02 * size,
       height: 1.15,
     );
 
 /// Gövde yazısı: DM Sans.
-TextStyle oaBody(double size, {Color color = OA.text, FontWeight weight = FontWeight.w400, double height = 1.45}) =>
-    GoogleFonts.dmSans(fontSize: size, fontWeight: weight, color: color, height: height);
+TextStyle oaBody(double size, {Color? color, FontWeight weight = FontWeight.w400, double height = 1.45}) =>
+    GoogleFonts.dmSans(fontSize: size, fontWeight: weight, color: color ?? OA.text, height: height);
 
 ThemeData oaTheme() {
   final base = ThemeData(
-    brightness: Brightness.dark,
+    brightness: OA.koyu ? Brightness.dark : Brightness.light,
     useMaterial3: true,
     scaffoldBackgroundColor: OA.bg,
-    colorScheme: const ColorScheme.dark(
+    colorScheme: (OA.koyu ? ColorScheme.dark : ColorScheme.light)(
       primary: OA.amber,
       onPrimary: OA.amberInk,
       secondary: OA.amber,
@@ -60,20 +63,20 @@ ThemeData oaTheme() {
     textTheme: GoogleFonts.dmSansTextTheme(base.textTheme).apply(bodyColor: OA.text, displayColor: OA.text),
     dividerColor: OA.line,
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: OA.surface2,
-      contentTextStyle: oaBody(15),
+      backgroundColor: OA.koyu ? OA.surface2 : const Color(0xFF1A1710),
+      contentTextStyle: oaBody(15, color: OA.koyu ? null : const Color(0xFFF6F3EC)),
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: OA.border)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: OA.border)),
     ),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(color: OA.amber, linearTrackColor: OA.surface2),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: OA.amber, linearTrackColor: OA.surface2),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: OA.bg,
       hintStyle: oaBody(17, color: OA.faint),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: OA.border2)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: OA.amber, width: 2)),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: OA.border2)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: OA.border2)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: OA.amber, width: 2)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: OA.border2)),
     ),
   );
 }
@@ -117,7 +120,7 @@ class OAButton extends StatelessWidget {
         minimumSize: Size(0, h),
         padding: pad,
         shape: const StadiumBorder(),
-        side: const BorderSide(color: OA.border2),
+        side: BorderSide(color: OA.border2),
         textStyle: style,
       ),
       child: Text(label),
@@ -145,7 +148,9 @@ class OACard extends StatelessWidget {
 
 /// Küçük etiket (Yakında, Beta, Yalnız Windows).
 class OAChip extends StatelessWidget {
-  const OAChip(this.label, {super.key, this.ink = OA.text2, this.bg = OA.surface2});
+  OAChip(this.label, {super.key, Color? ink, Color? bg})
+      : ink = ink ?? OA.text2,
+        bg = bg ?? OA.surface2;
   final String label;
   final Color ink;
   final Color bg;
@@ -160,7 +165,7 @@ class OAChip extends StatelessWidget {
 
 /// OA Labs işareti: oalabs.dev'deki dört karolu ızgara (sol üstte O, sağ altta amber karoda A).
 class OAMark extends StatelessWidget {
-  const OAMark({super.key, this.size = 32, this.ground = OA.bg});
+  OAMark({super.key, this.size = 32, Color? ground}) : ground = ground ?? OA.bg;
   final double size;
   final Color ground;
 

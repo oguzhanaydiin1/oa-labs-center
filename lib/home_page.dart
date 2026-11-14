@@ -86,7 +86,7 @@ class _AnnouncementCard extends StatelessWidget {
         ),
         IconButton(
           tooltip: t('Kapat'),
-          icon: const Icon(Icons.close, color: OA.muted),
+          icon: Icon(Icons.close, color: OA.muted),
           onPressed: () => state.dismissAnnouncement(item),
         ),
       ]),
@@ -265,7 +265,7 @@ class InstalledCard extends StatelessWidget {
 
     return Material(
       color: OA.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: OA.border)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: OA.border)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => openAppPage(context, state, account, app),

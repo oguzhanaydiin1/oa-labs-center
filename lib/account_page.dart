@@ -118,14 +118,14 @@ class _AccountPageState extends State<AccountPage> {
         },
       ),
       if (Platform.isWindows) ...[
-        const Divider(height: 1, color: OA.line),
+        Divider(height: 1, color: OA.line),
         SwitchRow(
           title: t('Windows açılışında arka planda çalış'),
           subtitle: t('Güncellemeleri 6 saatte bir denetler, yenisi çıkınca haber verir. Pencere kapanınca saat yanındaki simgeye iner.'),
           value: d.background,
           onChanged: d.setBackground,
         ),
-        const Divider(height: 1, color: OA.line),
+        Divider(height: 1, color: OA.line),
         SwitchRow(
           title: t('Güncellemeleri kendiliğinden kur'),
           subtitle: t('Arka planda kurar; o an açık olan uygulamayı kapatmamak için ona dokunmaz, yalnız haber verir.'),
@@ -134,7 +134,7 @@ class _AccountPageState extends State<AccountPage> {
         ),
       ],
       if (Platform.isAndroid) ...[
-        const Divider(height: 1, color: OA.line),
+        Divider(height: 1, color: OA.line),
         SwitchRow(
           title: t('Güncelleme ve duyuru bildirimleri'),
           subtitle: t('Günde bir kez yeni sürümleri ve OA Labs duyurularını denetler, varsa bildirim gösterir.'),
@@ -145,7 +145,7 @@ class _AccountPageState extends State<AccountPage> {
           },
         ),
       ],
-      const Divider(height: 1, color: OA.line),
+      Divider(height: 1, color: OA.line),
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(children: [
@@ -157,7 +157,7 @@ class _AccountPageState extends State<AccountPage> {
               foregroundColor: OA.text,
               selectedBackgroundColor: OA.amber,
               selectedForegroundColor: OA.amberInk,
-              side: const BorderSide(color: OA.border),
+              side: BorderSide(color: OA.border),
             ),
             segments: [
               ButtonSegment(value: 'auto', label: Text(t('Cihaz'))),
@@ -169,6 +169,30 @@ class _AccountPageState extends State<AccountPage> {
               await s.setLang(v.first);
               widget.onSettingsChanged();
             },
+          ),
+        ]),
+      ),
+      Divider(height: 1, color: OA.line),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(children: [
+          Expanded(child: Text(t('Tema'), style: oaBody(17, weight: FontWeight.w600))),
+          SegmentedButton<String>(
+            showSelectedIcon: false,
+            style: SegmentedButton.styleFrom(
+              backgroundColor: OA.surface2,
+              foregroundColor: OA.text,
+              selectedBackgroundColor: OA.amber,
+              selectedForegroundColor: OA.amberInk,
+              side: BorderSide(color: OA.border),
+            ),
+            segments: [
+              ButtonSegment(value: 'dark', label: Text(t('Koyu'))),
+              ButtonSegment(value: 'light', label: Text(t('Açık'))),
+              ButtonSegment(value: 'system', label: Text(t('Cihaz'))),
+            ],
+            selected: {s.theme},
+            onSelectionChanged: (v) => s.setTheme(v.first),
           ),
         ]),
       ),
@@ -287,7 +311,7 @@ class _AccountPageState extends State<AccountPage> {
             Text(t('Hesabınla giriş yapılmış uygulamalar ve tarayıcılar.'), style: oaBody(15, color: OA.text2)),
             for (final s in account.sessions) ...[
               const SizedBox(height: 12),
-              const Divider(height: 1, color: OA.line),
+              Divider(height: 1, color: OA.line),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(

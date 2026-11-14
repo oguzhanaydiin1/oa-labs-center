@@ -188,7 +188,7 @@ class _DeviceCard extends StatelessWidget {
           if (!me)
             IconButton(
               tooltip: t('Listeden kaldır'),
-              icon: const Icon(Icons.delete_outline, color: OA.muted),
+              icon: Icon(Icons.delete_outline, color: OA.muted),
               onPressed: () => page._remove(d),
             ),
         ]),
