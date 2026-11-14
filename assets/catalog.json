@@ -148,7 +148,7 @@
     "Kategori bütçeleri ve aylık raporlar",
     "Belgeler: fatura, sigorta, garanti; cihazında şifreli",
     "Parolalı yedek dosyası",
-    "Veriler yalnızca cihazında"
+    "İsteğe bağlı giriş; uçtan uca şifreli eşitleme"
    ],
    "features_en": [
     "Log income and expenses; see what you can spend per day until month end",
@@ -157,7 +157,7 @@
     "Category budgets and monthly reports",
     "Documents: bills, insurance, warranties; encrypted on your device",
     "Password-protected backup file",
-    "Your data stays on your device"
+    "Optional sign-in; end-to-end encrypted sync"
    ],
    "windows": {
     "asset": "^Terazi-Kurulum\\.exe$",
