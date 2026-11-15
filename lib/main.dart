@@ -28,14 +28,34 @@ Future<void> main(List<String> args) async {
   runApp(const CenterApp());
 }
 
-class CenterApp extends StatelessWidget {
+class CenterApp extends StatefulWidget {
   const CenterApp({super.key});
+
+  @override
+  State<CenterApp> createState() => _CenterAppState();
+}
+
+class _CenterAppState extends State<CenterApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() => Settings.i.platformBrightnessChanged();
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
         listenable: Settings.i,
         builder: (context, _) => MaterialApp(
-          key: ValueKey(L.code), // dil değişince bütün metinler yeniden kurulur
+          key: ValueKey('${L.code}-${OA.koyu}'), // dil ya da tema değişince bütün arayüz yeniden kurulur
           title: 'OA Labs Center',
           debugShowCheckedModeBanner: false,
           theme: oaTheme(),
@@ -197,7 +217,7 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
         child: Row(children: [
-          const OAMark(size: 30),
+          OAMark(size: 30),
           const SizedBox(width: 10),
           Expanded(child: Text('OA Labs Center', style: oaDisplay(20), maxLines: 1, overflow: TextOverflow.ellipsis)),
           IconButton(
@@ -228,12 +248,12 @@ class _SideNav extends StatelessWidget {
     return Container(
       width: 240,
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
-      decoration: const BoxDecoration(color: OA.bg2, border: Border(right: BorderSide(color: OA.line))),
+      decoration: BoxDecoration(color: OA.bg2, border: Border(right: BorderSide(color: OA.line))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(children: [
-            const OAMark(size: 32, ground: OA.bg2),
+            OAMark(size: 32, ground: OA.bg2),
             const SizedBox(width: 10),
             Expanded(child: Text('OA Labs Center', style: oaDisplay(19), maxLines: 1, overflow: TextOverflow.ellipsis)),
           ]),
@@ -247,7 +267,7 @@ class _SideNav extends StatelessWidget {
         const Spacer(),
         Material(
           color: tab == _account ? OA.surface2 : OA.surface,
-          shape: const StadiumBorder(side: BorderSide(color: OA.border)),
+          shape: StadiumBorder(side: BorderSide(color: OA.border)),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => onTap(_account),
@@ -315,7 +335,7 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final tabs = _tabs;
     return Container(
-      decoration: const BoxDecoration(color: OA.bg2, border: Border(top: BorderSide(color: OA.line))),
+      decoration: BoxDecoration(color: OA.bg2, border: Border(top: BorderSide(color: OA.line))),
       child: SafeArea(
         top: false,
         child: Padding(
@@ -333,7 +353,7 @@ class _BottomNav extends StatelessWidget {
                       Stack(clipBehavior: Clip.none, children: [
                         Icon(tabs[i].icon, size: 24, color: tab == i ? OA.amber : OA.muted),
                         if ((i == _home && badge > 0) || (i == _devices && devicesBadge > 0))
-                          const Positioned(
+                          Positioned(
                             right: -4,
                             top: -2,
                             child: SizedBox(

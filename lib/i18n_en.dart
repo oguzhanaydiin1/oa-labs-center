@@ -207,4 +207,14 @@ const enStrings = <String, String>{
   'Bir sorun çıktı, biraz sonra tekrar dene.': 'Something went wrong. Try again in a bit.',
   'Fotoğraf ekle': 'Add photo',
   'Fotoğrafı değiştir': 'Change photo',
+  // Tema ve Uygulama hakkında
+  'Tema': 'Theme',
+  'Koyu': 'Dark',
+  'Açık': 'Light',
+  'Uygulama hakkında': 'About the app',
+  'OA Labs atölyesinde özenle yapıldı.': 'Carefully made at the OA Labs workshop.',
+  'Sürüm': 'Version',
+  'Sistem': 'System',
+  'Altyapı': 'Built with',
+  'geliştirme': 'development',
 };

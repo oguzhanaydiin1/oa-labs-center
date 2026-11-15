@@ -50,7 +50,7 @@ Future<bool> confirm(BuildContext context,
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: OA.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: OA.border)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: OA.border)),
       title: Text(title, style: oaDisplay(22)),
       content: body == null ? null : Text(body, style: oaBody(15, color: OA.text2)),
       actions: [

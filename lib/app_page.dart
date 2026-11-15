@@ -176,7 +176,7 @@ class _AppPageState extends State<AppPage> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 5),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.check, size: 18, color: OA.amber)),
+                Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.check, size: 18, color: OA.amber)),
                 const SizedBox(width: 10),
                 Expanded(child: Text(f, style: oaBody(15))),
               ]),
@@ -222,7 +222,7 @@ class _AppPageState extends State<AppPage> {
           Text(t('Sürüm bilgisi alınamadı.'), style: oaBody(15, color: OA.muted))
         else
           for (final r in h.take(6)) ...[
-            const Divider(height: 24, color: OA.line),
+            Divider(height: 24, color: OA.line),
             Row(children: [
               Text(r.version, style: oaBody(17, weight: FontWeight.w600)),
               if (r.prerelease) ...[const SizedBox(width: 8), OAChip(t('Deneme'), ink: OA.betaInk, bg: OA.betaBg)],

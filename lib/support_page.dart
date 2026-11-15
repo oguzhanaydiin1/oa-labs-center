@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'account.dart';
 import 'i18n.dart';
+import 'about.dart';
 import 'oa_theme.dart';
 import 'version.dart';
 import 'widgets.dart';
@@ -127,7 +128,7 @@ class _SupportPageState extends State<SupportPage> {
       return OACard(
         padding: const EdgeInsets.all(24),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Icon(Icons.check_circle_outline, color: OA.green, size: 36),
+          Icon(Icons.check_circle_outline, color: OA.green, size: 36),
           const SizedBox(height: 10),
           Text(t('Teşekkürler, aldık!'), style: oaDisplay(24)),
           const SizedBox(height: 6),
@@ -231,7 +232,7 @@ class _SupportPageState extends State<SupportPage> {
                 ]),
               ),
               if (onCopy != null)
-                IconButton(tooltip: t('Kopyala'), icon: const Icon(Icons.copy_outlined, size: 20, color: OA.muted), onPressed: onCopy),
+                IconButton(tooltip: t('Kopyala'), icon: Icon(Icons.copy_outlined, size: 20, color: OA.muted), onPressed: onCopy),
             ]),
           ),
         );
@@ -257,7 +258,7 @@ class _SupportPageState extends State<SupportPage> {
       OACard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const OAMark(size: 32, ground: OA.surface),
+            OAMark(size: 32, ground: OA.surface),
             const SizedBox(width: 10),
             Text('OA Labs', style: oaDisplay(20)),
           ]),
@@ -272,6 +273,8 @@ class _SupportPageState extends State<SupportPage> {
           ]),
         ]),
       ),
+      const SizedBox(height: 20),
+      const AboutCard(),
     ]);
   }
 }

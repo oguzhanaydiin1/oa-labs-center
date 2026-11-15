@@ -1,5 +1,10 @@
 # Sürüm notları
 
+## 0.4.0
+
+- Açık tema: Hesap → Ayarlar → Tema: Koyu / Açık / Cihaz. "Cihaz" seçiliyse Windows'un ya da telefonun açık/koyu ayarına uyar
+- Destek sayfasında "Uygulama hakkında" kartı: dönen OA Labs mührü, sürüm, sistem ve altyapı bilgisi
+
 ## 0.3.6
 
 - Çıkışta ekranın donması için ikinci düzeltme: uygulama artık kapanırken hiçbir şey beklemeden anında sonlanıyor
