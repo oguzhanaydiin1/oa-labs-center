@@ -217,4 +217,6 @@ const enStrings = <String, String>{
   'Sistem': 'System',
   'Altyapı': 'Built with',
   'geliştirme': 'development',
+  'OA Labs uygulamaları ücretsiz ve reklamsız. Beğendiysen bir kahve ısmarlayarak devam etmemize yardım edebilirsin.': 'OA Labs apps are free and ad-free. If you like them, you can help us keep going by buying us a coffee.',
+  'Bir kahve ısmarla': 'Buy us a coffee',
 };

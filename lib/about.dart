@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'i18n.dart';
 import 'oa_theme.dart';
 import 'version.dart';
+import 'widgets.dart' show openLink;
 
 /// OA Labs mühürü: iki halka, aralarında dönen "OA LABS · ATÖLYE · 2026" yazısı, ortada A.
 /// Yazı 40 saniyede bir tur döner; sistemde hareketi azaltma açıksa durur.
@@ -202,6 +203,23 @@ class AboutCard extends StatelessWidget {
           _row(t('Sürüm'), appVersion == '0.0.0' ? t('geliştirme') : appVersion),
           _row(t('Sistem'), _system),
           _row(t('Altyapı'), 'Flutter · Dart $_dart'),
+          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.only(top: 14),
+            decoration: BoxDecoration(border: Border(top: BorderSide(color: OA.line))),
+            child: Wrap(spacing: 14, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Text(t('OA Labs uygulamaları ücretsiz ve reklamsız. Beğendiysen bir kahve ısmarlayarak devam etmemize yardım edebilirsin.'), style: oaBody(14, color: OA.muted)),
+              ),
+              FilledButton.icon(
+                onPressed: () => openLink('https://buymeacoffee.com/oalabs'),
+                icon: const Icon(Icons.coffee_outlined, size: 18),
+                label: Text(t('Bir kahve ısmarla')),
+              ),
+            ]),
+          ),
           const SizedBox(height: 12),
           Text('© ${DateTime.now().year} Oğuzhan Aydın', style: oaBody(14, color: OA.muted)),
         ]),

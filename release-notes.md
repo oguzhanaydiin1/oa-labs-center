@@ -1,5 +1,9 @@
 # Sürüm notları
 
+## 0.4.1
+
+- Destek → Uygulama hakkında: "Bir kahve ısmarla" düğmesi (Buy Me a Coffee)
+
 ## 0.4.0
 
 - Açık tema: Hesap → Ayarlar → Tema: Koyu / Açık / Cihaz. "Cihaz" seçiliyse Windows'un ya da telefonun açık/koyu ayarına uyar
